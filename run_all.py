@@ -225,6 +225,86 @@ def run_walkforward_validation():
         return False
 
 
+def print_status():
+    """Print project status and next steps."""
+    print("Project: F1 Teammate Qualifying Predictor")
+    print("Status:")
+    
+    # Check data/input
+    input_dir = Path("data/input")
+    if input_dir.exists() and input_dir.is_symlink():
+        try:
+            target = input_dir.resolve()
+            if target.exists():
+                # Recursively search for parquet files in nested structure
+                parquet_files = list(target.rglob("*.parquet"))
+                print(f"  [✓] data/input linked ({len(parquet_files)} files)")
+            else:
+                print("  [✗] data/input linked but target missing")
+        except:
+            print("  [✗] data/input linked but target invalid")
+    elif input_dir.exists():
+        # Recursively search for parquet files in nested structure
+        parquet_files = list(input_dir.rglob("*.parquet"))
+        print(f"  [✓] data/input present ({len(parquet_files)} files)")
+    else:
+        print("  [ ] data/input missing (run: make link)")
+    
+    # Check processed features
+    processed_file = Path("data/processed/teammate_qual.parquet")
+    if processed_file.exists():
+        print(f"  [✓] features built ({processed_file})")
+    else:
+        print("  [ ] features missing (run: make build)")
+    
+    # Check trained models
+    xgb_model = Path("models/xgboost.joblib")
+    lr_model = Path("models/logistic_regression.joblib")
+    if xgb_model.exists() and lr_model.exists():
+        print("  [✓] models trained (models/*.joblib)")
+        
+        # Check calibrator
+        calibrator = Path("models/xgb_calibrator.joblib")
+        if calibrator.exists():
+            print("  [✓] calibrator trained (models/xgb_calibrator.joblib)")
+        else:
+            print("  [ ] calibrator missing (run: make train)")
+    else:
+        print("  [ ] models missing (run: make train)")
+    
+    # Check evaluation summary
+    eval_summary = Path("reports/evaluation_summary.md")
+    if eval_summary.exists():
+        print("  [✓] eval summary (reports/evaluation_summary.md)")
+    else:
+        print("  [ ] eval summary missing (run: make eval)")
+    
+    # Check walk-forward summary
+    wf_summary = Path("reports/predictions/wf_summary.md")
+    if wf_summary.exists():
+        print("  [✓] walk-forward summary (reports/predictions/wf_summary.md)")
+    else:
+        print("  [ ] walk-forward summary missing (run: make wf)")
+    
+    # Determine next step
+    if not input_dir.exists():
+        next_step = "make link"
+    elif not processed_file.exists():
+        next_step = "make build"
+    elif not xgb_model.exists():
+        next_step = "make train"
+    elif not eval_summary.exists():
+        next_step = "make eval"
+    elif not wf_summary.exists():
+        next_step = "make wf"
+    else:
+        next_step = "make predict EVENT=2025_11"
+    
+    print(f"Next step suggestion: {next_step}")
+    print("Common commands:")
+    print("  make build | make train | make eval | make wf | make predict EVENT=YYYY_RR")
+
+
 def main():
     """Main function to run the pipeline."""
     parser = argparse.ArgumentParser(
@@ -255,6 +335,8 @@ Examples:
                        help='Run complete pipeline')
     parser.add_argument('--validate-walkforward', action='store_true',
                        help='Run walk-forward validation with calibration and baselines')
+    parser.add_argument('--status', action='store_true',
+                       help='Show project status and next steps')
     
     args = parser.parse_args()
     
@@ -262,7 +344,7 @@ Examples:
     if args.predict and not args.event:
         parser.error("--predict requires --event")
     
-    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward]):
+    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward, args.status]):
         parser.error("Must specify at least one action")
     
     # Run pipeline
@@ -297,6 +379,10 @@ Examples:
         if not run_walkforward_validation():
             success = False
             logger.error("Walk-forward validation failed")
+    
+    if args.status:
+        print_status()
+        sys.exit(0)
     
     # Final status
     if success:

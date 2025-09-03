@@ -6,6 +6,20 @@ A production-ready machine learning pipeline for predicting whether a Formula 1 
 
 This pipeline predicts the binary outcome `beats_teammate_q` (1 if driver qualifies ahead of teammate, 0 otherwise) using historical F1 data. It's designed to work with your existing FastF1 data exports and provides a complete ML workflow from data processing to model deployment.
 
+### Quickstart
+```bash
+make venv && make install
+make link
+make build
+make train
+make eval
+# optional:
+make wf
+make predict EVENT=2025_11
+# at any time:
+make status
+```
+
 ## 🏗️ Architecture
 
 ```
