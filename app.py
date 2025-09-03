@@ -499,15 +499,15 @@ def main():
                 
                 # Display each team with rich visuals using Streamlit components
                 for _, row in display_df.iterrows():
-                team_name = row['🏎️ Team']
-                driver_a = row['Driver A']
-                driver_b = row['Driver B']
-                model_pick = row['🤖 Model Pick']
-                confidence = row['🎯 Model Confidence']
-                actual_winner = row['🏁 Actual Winner']
-                h2h_pick = row['📈 H2H Pick']
-                model_correct = row['✅ Model Correct']
-                h2h_correct = row['✅ H2H Correct']
+                    team_name = row['🏎️ Team']
+                    driver_a = row['Driver A']
+                    driver_b = row['Driver B']
+                    model_pick = row['🤖 Model Pick']
+                    confidence = row['🎯 Model Confidence']
+                    actual_winner = row['🏁 Actual Winner']
+                    h2h_pick = row['📈 H2H Pick']
+                    model_correct = row['✅ Model Correct']
+                    h2h_correct = row['✅ H2H Correct']
                 
                 # Determine team constructor ID for assets
                 constructor_id = team_name.upper().replace(' ', '_')
