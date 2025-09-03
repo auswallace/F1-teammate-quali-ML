@@ -422,6 +422,40 @@ class TeammatePredictor:
         
         return df
 
+    def build_event_feature_rows(self, event_key: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Build feature rows for an event (for explanation purposes).
+        
+        Args:
+            event_key: The event key to build features for
+            
+        Returns:
+            Tuple of (feature_matrix, driver_info) where:
+            - feature_matrix: DataFrame with features aligned to training schema
+            - driver_info: DataFrame with driver metadata
+        """
+        try:
+            # Load processed data
+            processed_path = Path(self.config['data']['processed_dir']) / "teammate_qual.parquet"
+            if not processed_path.exists():
+                raise FileNotFoundError(f"Processed data not found: {processed_path}")
+            
+            # Load data for the specific event
+            df_processed = pd.read_parquet(processed_path)
+            event_data = df_processed[df_processed['event_key'] == event_key].copy()
+            
+            if len(event_data) == 0:
+                raise ValueError(f"No data found for event: {event_key}")
+            
+            # Prepare features using existing method
+            X, driver_info = self._prepare_prediction_features(event_data)
+            
+            return X, driver_info
+            
+        except Exception as e:
+            logger.error(f"Error building feature rows for {event_key}: {e}")
+            raise
+
 
 def main():
     """Main function to run prediction pipeline."""

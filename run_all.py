@@ -225,6 +225,43 @@ def run_walkforward_validation():
         return False
 
 
+def run_explanation(event_key: str, team: str = None):
+    """Run explanation pipeline for a specific event and team."""
+    try:
+        logger.info(f"Starting explanation generation for event {event_key}, team {team or 'all'}")
+        
+        # Import and run explanation
+        from src.explain import run as explain_run
+        
+        results = explain_run(event_key, team)
+        
+        if results['success']:
+            logger.info("Explanation generation completed successfully!")
+            logger.info(f"📊 CSV table: {results['artifacts']['csv_table']}")
+            logger.info(f"📝 Summary: {results['artifacts']['markdown_summary']}")
+            logger.info(f"🖼️  Figures: {results['artifacts']['figures_dir']}")
+            
+            # Print helpful note
+            print("\n" + "="*60)
+            print("📖 HOW TO READ THESE EXPLANATIONS:")
+            print("="*60)
+            print("• CSV table: Feature-by-feature breakdown with SHAP/permutation values")
+            print("• Summary: Human-readable explanation of top factors for each driver")
+            print("• Waterfall plots: Visual SHAP values (blue=positive, red=negative)")
+            print("• Positive factors push probability UP, negative factors push DOWN")
+            print("• Higher absolute values = more important features")
+            print("="*60)
+            
+            return True
+        else:
+            logger.error(f"Explanation generation failed: {results['error']}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Explanation generation failed: {e}")
+        return False
+
+
 def print_status():
     """Print project status and next steps."""
     print("Project: F1 Teammate Qualifying Predictor")
@@ -317,6 +354,7 @@ Examples:
   python run_all.py --eval                    # Evaluate models
   python run_all.py --predict --event 2025_01 # Make predictions for event
   python run_all.py --validate-walkforward    # Run walk-forward validation
+  python run_all.py --explain --event 2025_11 --team MCLAREN  # Explain predictions
   python run_all.py --all                     # Run complete pipeline
         """
     )
@@ -335,6 +373,10 @@ Examples:
                        help='Run complete pipeline')
     parser.add_argument('--validate-walkforward', action='store_true',
                        help='Run walk-forward validation with calibration and baselines')
+    parser.add_argument('--explain', action='store_true',
+                       help='Generate local explanations for event predictions')
+    parser.add_argument('--team', type=str,
+                       help='Team/constructor ID for explanations (optional, defaults to all teams)')
     parser.add_argument('--status', action='store_true',
                        help='Show project status and next steps')
     
@@ -344,7 +386,10 @@ Examples:
     if args.predict and not args.event:
         parser.error("--predict requires --event")
     
-    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward, args.status]):
+    if args.explain and not args.event:
+        parser.error("--explain requires --event")
+    
+    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward, args.explain, args.status]):
         parser.error("Must specify at least one action")
     
     # Run pipeline
@@ -379,6 +424,12 @@ Examples:
         if not run_walkforward_validation():
             success = False
             logger.error("Walk-forward validation failed")
+    
+    if args.explain:
+        logger.info("Running explanation pipeline...")
+        if not run_explanation(args.event, args.team):
+            success = False
+            logger.error("Explanation pipeline failed")
     
     if args.status:
         print_status()
