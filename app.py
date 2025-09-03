@@ -22,7 +22,12 @@ st.set_page_config(
 
 # Title and description
 st.title("🏎️ F1 Teammate Qualifying Predictor")
-st.markdown("Predict which driver will beat their teammate in qualifying sessions using machine learning.")
+st.markdown("""
+**Predict which driver will beat their teammate in qualifying sessions using machine learning.**
+
+This system uses historical F1 data to predict teammate qualifying outcomes with calibrated probabilities. 
+The model considers driver form, team performance, track characteristics, practice sessions, and weather conditions.
+""")
 
 # Sidebar for configuration
 st.sidebar.header("Configuration")
@@ -172,27 +177,45 @@ def main():
     # Event dropdown
     if selected_season in season_events:
         events = season_events[selected_season]
+        
+        # Create better event descriptions
+        def format_event_name(event_key):
+            details = event_details.get(event_key, {})
+            track_name = details.get('track_name', 'Unknown Track')
+            round_num = details.get('round', '')
+            
+            # Extract date info from event key (e.g., 2025_R11 -> Round 11)
+            if '_R' in event_key:
+                round_info = f"Round {event_key.split('_R')[1]}"
+            else:
+                round_info = event_key
+            
+            return f"{round_info} - {track_name}"
+        
         selected_event = st.sidebar.selectbox(
             "Event",
             options=events,
             index=len(events) - 1,  # Default to most recent
-            format_func=lambda x: f"{x} ({event_details.get(x, {}).get('track_name', 'Unknown Track')})"
+            format_func=format_event_name
         )
     else:
         selected_event = None
         st.sidebar.warning("No events found for selected season")
     
     # Model info
-    st.sidebar.subheader("Model Information")
-    st.sidebar.info(f"**XGBoost**: {'✅' if model_status['xgboost'] else '❌'}")
-    st.sidebar.info(f"**Logistic Regression**: {'✅' if model_status['logistic_regression'] else '❌'}")
-    st.sidebar.info(f"**Calibrator**: {'✅' if model_status['calibrator'] else '❌'}")
+    st.sidebar.subheader("🤖 Model Information")
+    st.sidebar.info(f"**XGBoost (Main Model)**: {'✅ Trained' if model_status['xgboost'] else '❌ Missing'}")
+    st.sidebar.info(f"**Logistic Regression**: {'✅ Trained' if model_status['logistic_regression'] else '❌ Missing'}")
+    st.sidebar.info(f"**Probability Calibrator**: {'✅ Active' if model_status['calibrator'] else '❌ Missing'}")
+    
+    if model_status['calibrator']:
+        st.sidebar.success("🎯 **Calibrated predictions enabled** - probabilities are trustworthy!")
     
     # Data info
-    st.sidebar.subheader("Data Status")
-    st.sidebar.info(f"**Processed**: {'✅' if data_status['processed'] else '❌'}")
-    st.sidebar.info(f"**Labeled**: {'✅' if data_status['labeled'] else '❌'}")
-    st.sidebar.info(f"**Input Linked**: {'✅' if data_status['input_linked'] else '❌'}")
+    st.sidebar.subheader("📊 Data Status")
+    st.sidebar.info(f"**Processed Features**: {'✅ Ready' if data_status['processed'] else '❌ Missing'}")
+    st.sidebar.info(f"**Labeled Data**: {'✅ Ready' if data_status['labeled'] else '❌ Missing'}")
+    st.sidebar.info(f"**F1 Data Source**: {'✅ Linked' if data_status['input_linked'] else '❌ Missing'}")
     
     # Salary baseline info
     if salary_available:
@@ -202,7 +225,7 @@ def main():
     
     # Main content area
     if selected_event:
-        st.header(f"Predictions for {selected_event}")
+        st.header(f"🏁 Predictions for {selected_event}")
         
         # Event details
         if selected_event in event_details:
@@ -217,6 +240,13 @@ def main():
             
             if details.get('is_sprint_weekend'):
                 st.info("🏁 **Sprint Weekend**: Using qualifying session that sets race grid (not sprint shootout)")
+        
+        # Add context about what we're predicting
+        st.markdown("""
+        **What we're predicting:** For each team, we predict which driver will qualify ahead of their teammate 
+        and provide a confidence score. The model considers historical performance, current form, track characteristics, 
+        and practice session data.
+        """)
         
         # Load predictions
         try:
@@ -253,44 +283,97 @@ def main():
             metrics = calculate_accuracy_metrics(results_df)
             
             # Display summary metrics
-            st.subheader("📊 Event Summary")
+            st.subheader("📊 Event Performance Summary")
+            
+            # Add explanation of what each metric means
+            st.markdown("""
+            **How to read these metrics:** 
+            - **Model Accuracy**: How often our ML model correctly predicted the teammate winner
+            - **Baseline A**: How often the driver with better head-to-head record won (simple heuristic)
+            - **Baseline B**: How often the higher-paid driver won (if salary data available)
+            """)
+            
             col1, col2, col3 = st.columns(3)
             
             with col1:
-                st.metric("Model Accuracy", f"{metrics['model_accuracy']:.1%}")
+                st.metric("🤖 ML Model Accuracy", f"{metrics['model_accuracy']:.1%}")
             with col2:
-                st.metric("Baseline A Accuracy", f"{metrics['baseline_a_accuracy']:.1%}")
+                st.metric("📈 H2H Record Accuracy", f"{metrics['baseline_a_accuracy']:.1%}")
             with col3:
                 if salary_available:
-                    st.metric("Baseline B Accuracy", f"{metrics['baseline_b_accuracy']:.1%}")
+                    st.metric("💰 Salary-Based Accuracy", f"{metrics['baseline_b_accuracy']:.1%}")
                 else:
-                    st.metric("Baseline B", "N/A")
+                    st.metric("💰 Salary Baseline", "N/A")
             
             # Display predictions table
-            st.subheader("🏁 Team Predictions")
+            st.subheader("🏁 Team-by-Team Predictions")
+            
+            # Add explanation of the table
+            st.markdown("""
+            **Table explanation:** Each row shows a team's driver pairing. The model predicts which driver will qualify ahead 
+            and provides a confidence score. We compare this against what actually happened and against simple baseline rules.
+            """)
             
             # Create a more readable table
             display_df = create_display_table(results_df, salary_available)
             
-            # Color code the rows based on correctness
+            # Apply better styling with custom CSS
+            st.markdown("""
+            <style>
+            .stDataFrame {
+                font-size: 14px;
+            }
+            .stDataFrame th {
+                background-color: #f0f2f6;
+                font-weight: bold;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            
+            # Color code the rows based on correctness with better colors
             def color_correctness(val):
                 if pd.isna(val):
                     return ''
-                return 'background-color: lightgreen' if val else 'background-color: lightcoral'
+                elif val:  # Correct prediction
+                    return 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;'
+                else:  # Incorrect prediction
+                    return 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'
             
             styled_df = display_df.style.applymap(
                 color_correctness, 
-                subset=['Model Correct', 'Baseline A Correct', 'Baseline B Correct']
-            )
+                subset=['✅ Model Correct', '✅ H2H Correct', '✅ Salary Correct']
+            ).format({
+                '🎯 Model Confidence': '{:.1%}'
+            })
             
             st.dataframe(styled_df, use_container_width=True)
             
-            # Legend
+            # Legend and explanations
             st.markdown("---")
-            st.markdown("**Legend:**")
-            st.markdown("- **Model confidence** = calibrated probability that the predicted teammate beats their teammate in qualifying")
-            st.markdown("- **Baseline A** = prior head-to-head leader entering the event")
-            st.markdown("- **Baseline B** = higher salary driver (if salary data available)")
+            st.subheader("📚 How to Read the Results")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **🎯 Model Predictions:**
+                - **Model Pick**: Which driver our ML system predicts will qualify ahead
+                - **Model Confidence**: Calibrated probability (higher = more confident)
+                - **Model Correct**: ✅ Green = correct prediction, ❌ Red = incorrect
+                """)
+            
+            with col2:
+                st.markdown("""
+                **📊 Baseline Comparisons:**
+                - **H2H Record**: Driver with better head-to-head record entering the event
+                - **Salary-Based**: Higher-paid driver (if salary data available)
+                - **Baseline Correct**: Same color coding as model predictions
+                """)
+            
+            st.info("""
+            **💡 Key Insight**: The ML model considers hundreds of features including driver form, team performance, 
+            track characteristics, practice sessions, and weather. Simple baselines only look at one factor each.
+            """)
             
         except Exception as e:
             st.error(f"Error loading predictions: {e}")
@@ -474,17 +557,17 @@ def create_display_table(results_df, salary_available):
         
         # Create display row
         row = {
-            'Constructor': constructor_id.replace('_', ' ').title(),
+            '🏎️ Team': constructor_id.replace('_', ' ').title(),
             'Driver A': driver1['driver_name'],
             'Driver B': driver2['driver_name'],
-            'Model Pick': winner['driver_name'],
-            'Model Confidence': f"{winner['model_confidence']:.1%}",
-            'Actual Winner': winner['driver_name'] if winner['actual_beats_teammate'] == 1 else loser['driver_name'],
-            'Baseline A Pick': winner['driver_name'] if winner['baseline_a_pick'] == 1 else (loser['driver_name'] if loser['baseline_a_pick'] == 1 else 'No Prior'),
-            'Baseline B Pick': winner['driver_name'] if winner['baseline_b_pick'] == 1 else (loser['driver_name'] if loser['baseline_b_pick'] == 1 else 'Equal Salary') if salary_available else 'N/A',
-            'Model Correct': winner['actual_beats_teammate'] == 1,
-            'Baseline A Correct': winner.get('baseline_a_correct', None) if pd.notna(winner.get('baseline_a_correct', None)) else None,
-            'Baseline B Correct': winner.get('baseline_b_correct', None) if pd.notna(winner.get('baseline_b_correct', None)) else None
+            '🤖 Model Pick': winner['driver_name'],
+            '🎯 Model Confidence': winner['model_confidence'],
+            '🏁 Actual Winner': winner['driver_name'] if winner['actual_beats_teammate'] == 1 else loser['driver_name'],
+            '📈 H2H Pick': winner['driver_name'] if winner['baseline_a_pick'] == 1 else (loser['driver_name'] if loser['baseline_a_pick'] == 1 else 'No Prior'),
+            '💰 Salary Pick': winner['driver_name'] if winner['baseline_b_pick'] == 1 else (loser['driver_name'] if loser['baseline_b_pick'] == 1 else 'Equal Salary') if salary_available else 'N/A',
+            '✅ Model Correct': winner['actual_beats_teammate'] == 1,
+            '✅ H2H Correct': winner.get('baseline_a_correct', None) if pd.notna(winner.get('baseline_a_correct', None)) else None,
+            '✅ Salary Correct': winner.get('baseline_b_correct', None) if pd.notna(winner.get('baseline_b_correct', None)) else None
         }
         
         display_rows.append(row)
