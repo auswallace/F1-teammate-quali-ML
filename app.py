@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -233,6 +234,9 @@ def main():
                 on='driver_id', 
                 how='left'
             )
+            
+            # Add model correctness column
+            results_df['model_correct'] = (results_df['model_pick'] == results_df['actual_beats_teammate'])
             
             # Compute Baseline A: Prior head-to-head leader
             results_df = compute_baseline_a(results_df, selected_event, details['season'])
