@@ -13,86 +13,57 @@ sys.path.append(str(Path(__file__).parent / "src"))
 from src.predict import TeammatePredictor
 from src.eval import ModelEvaluator
 
-# Track name mapping (round number to actual track names)
-TRACK_MAPPING = {
-    'R01': 'Bahrain International Circuit',
-    'R02': 'Jeddah Corniche Circuit', 
-    'R03': 'Albert Park Circuit',
-    'R04': 'Suzuka International Racing Course',
-    'R05': 'Miami International Autodrome',
-    'R06': 'Circuit de Monaco',
-    'R07': 'Circuit de Barcelona-Catalunya',
-    'R08': 'Red Bull Ring',
-    'R09': 'Silverstone Circuit',
-    'R10': 'Hungaroring',
-    'R11': 'Circuit de Spa-Francorchamps',
-    'R12': 'Circuit Zandvoort',
-    'R13': 'Monza Circuit',
-    'R14': 'Baku City Circuit',
-    'R15': 'Las Vegas Strip Circuit',
-    'R16': 'Lusail International Circuit',
-    'R17': 'Yas Marina Circuit',
-    'R18': 'Circuit of the Americas',
-    'R19': 'Autódromo José Carlos Pace',
-    'R20': 'Autódromo Hermanos Rodríguez',
-    'R21': 'Marina Bay Street Circuit',
-    'R22': 'Shanghai International Circuit',
-    'R23': 'Mount Fuji Speedway',
-    'R24': 'Kyalami Grand Prix Circuit'
-}
-
-# Season dates mapping (actual F1 2025 calendar)
-SEASON_DATES = {
-    2025: {
-        'R01': 'March 2, 2025',      # Bahrain
-        'R02': 'March 9, 2025',      # Saudi Arabia
-        'R03': 'March 23, 2025',     # Australia
-        'R04': 'April 6, 2025',      # Japan
-        'R05': 'April 20, 2025',     # China
-        'R06': 'May 4, 2025',        # Miami
-        'R07': 'May 18, 2025',       # Emilia Romagna
-        'R08': 'May 25, 2025',       # Monaco
-        'R09': 'June 1, 2025',       # Spain
-        'R10': 'June 8, 2025',       # Austria
-        'R11': 'June 22, 2025',      # Great Britain
-        'R12': 'July 6, 2025',       # Hungary
-        'R13': 'July 20, 2025',      # Belgium
-        'R14': 'July 27, 2025',      # Netherlands
-        'R15': 'August 3, 2025',     # Italy
-        'R16': 'August 17, 2025',    # Azerbaijan
-        'R17': 'September 7, 2025',  # Singapore
-        'R18': 'September 21, 2025', # United States
-        'R19': 'October 5, 2025',    # Mexico
-        'R20': 'October 19, 2025',   # Brazil
-        'R21': 'November 2, 2025',   # Las Vegas
-        'R22': 'November 16, 2025',  # Qatar
-        'R23': 'November 23, 2025',  # Abu Dhabi
-    },
-    2024: {
-        'R01': 'March 2, 2024',      # Bahrain
-        'R02': 'March 9, 2024',      # Saudi Arabia
-        'R03': 'March 24, 2024',     # Australia
-        'R04': 'April 7, 2024',      # Japan
-        'R05': 'April 21, 2024',     # China
-        'R06': 'May 5, 2024',        # Miami
-        'R07': 'May 19, 2024',       # Emilia Romagna
-        'R08': 'May 26, 2024',       # Monaco
-        'R09': 'June 2, 2024',       # Spain
-        'R10': 'June 9, 2024',       # Austria
-        'R11': 'June 23, 2024',      # Great Britain
-        'R12': 'July 7, 2024',       # Hungary
-        'R13': 'July 21, 2024',      # Belgium
-        'R14': 'July 28, 2024',      # Netherlands
-        'R15': 'August 4, 2024',     # Italy
-        'R16': 'August 18, 2024',    # Azerbaijan
-        'R17': 'September 8, 2024',  # Singapore
-        'R18': 'September 22, 2024', # United States
-        'R19': 'October 6, 2024',    # Mexico
-        'R20': 'October 20, 2024',   # Brazil
-        'R21': 'November 3, 2024',   # Las Vegas
-        'R22': 'November 17, 2024',  # Qatar
-        'R23': 'November 24, 2024',  # Abu Dhabi
-    }
+# F1 Calendar Database - Maps event keys to actual track names and dates
+F1_CALENDAR = {
+    # 2025 Season
+    '2025_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'March 2, 2025'},
+    '2025_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'March 9, 2025'},
+    '2025_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'March 23, 2025'},
+    '2025_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'April 6, 2025'},
+    '2025_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'April 20, 2025'},
+    '2025_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 4, 2025'},
+    '2025_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 18, 2025'},
+    '2025_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 25, 2025'},
+    '2025_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'June 1, 2025'},
+    '2025_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'June 8, 2025'},
+    '2025_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'June 22, 2025'},
+    '2025_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'July 6, 2025'},
+    '2025_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'July 20, 2025'},
+    '2025_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'July 27, 2025'},
+    '2025_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'August 3, 2025'},
+    '2025_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'August 17, 2025'},
+    '2025_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'September 7, 2025'},
+    '2025_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'September 21, 2025'},
+    '2025_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'October 5, 2025'},
+    '2025_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'October 19, 2025'},
+    '2025_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'November 2, 2025'},
+    '2025_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'November 16, 2025'},
+    '2025_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'November 23, 2025'},
+    
+    # 2024 Season
+    '2024_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'March 2, 2024'},
+    '2024_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'March 9, 2024'},
+    '2024_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'March 24, 2024'},
+    '2024_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'April 7, 2024'},
+    '2024_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'April 21, 2024'},
+    '2024_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 5, 2024'},
+    '2024_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 19, 2024'},
+    '2024_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 26, 2024'},
+    '2024_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'June 2, 2024'},
+    '2024_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'June 9, 2024'},
+    '2024_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'June 23, 2024'},
+    '2024_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'July 7, 2024'},
+    '2024_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'July 21, 2024'},
+    '2024_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'July 28, 2024'},
+    '2024_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'August 4, 2024'},
+    '2024_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'August 18, 2024'},
+    '2024_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'September 8, 2024'},
+    '2024_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'September 22, 2024'},
+    '2024_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'October 6, 2024'},
+    '2024_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'October 20, 2024'},
+    '2024_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'November 3, 2024'},
+    '2024_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'November 17, 2024'},
+    '2024_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'November 24, 2024'},
 }
 
 # Page config
