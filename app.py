@@ -13,6 +13,81 @@ sys.path.append(str(Path(__file__).parent / "src"))
 from src.predict import TeammatePredictor
 from src.eval import ModelEvaluator
 
+# Track name mapping (round number to actual track names)
+TRACK_MAPPING = {
+    'R01': 'Bahrain International Circuit',
+    'R02': 'Jeddah Corniche Circuit', 
+    'R03': 'Albert Park Circuit',
+    'R04': 'Suzuka International Racing Course',
+    'R05': 'Miami International Autodrome',
+    'R06': 'Circuit de Monaco',
+    'R07': 'Circuit de Barcelona-Catalunya',
+    'R08': 'Red Bull Ring',
+    'R09': 'Silverstone Circuit',
+    'R10': 'Hungaroring',
+    'R11': 'Circuit de Spa-Francorchamps',
+    'R12': 'Circuit Zandvoort',
+    'R13': 'Monza Circuit',
+    'R14': 'Baku City Circuit',
+    'R15': 'Las Vegas Strip Circuit',
+    'R16': 'Lusail International Circuit',
+    'R17': 'Yas Marina Circuit',
+    'R18': 'Circuit of the Americas',
+    'R19': 'Autódromo José Carlos Pace',
+    'R20': 'Autódromo Hermanos Rodríguez',
+    'R21': 'Marina Bay Street Circuit',
+    'R22': 'Shanghai International Circuit',
+    'R23': 'Mount Fuji Speedway',
+    'R24': 'Kyalami Grand Prix Circuit'
+}
+
+# Season dates mapping (approximate)
+SEASON_DATES = {
+    2025: {
+        'R01': 'March 2, 2025',
+        'R02': 'March 9, 2025', 
+        'R03': 'March 23, 2025',
+        'R04': 'April 6, 2025',
+        'R05': 'April 20, 2025',
+        'R06': 'May 25, 2025',
+        'R07': 'June 1, 2025',
+        'R08': 'June 8, 2025',
+        'R09': 'July 6, 2025',
+        'R10': 'July 27, 2025',
+        'R11': 'August 3, 2025',
+        'R12': 'August 24, 2025',
+        'R13': 'September 7, 2025',
+        'R14': 'September 21, 2025',
+        'R15': 'October 19, 2025',
+        'R16': 'November 2, 2025',
+        'R17': 'November 9, 2025',
+        'R18': 'November 23, 2025',
+        'R19': 'November 30, 2025',
+        'R20': 'December 7, 2025'
+    },
+    2024: {
+        'R01': 'March 2, 2024',
+        'R02': 'March 9, 2024',
+        'R03': 'March 24, 2024',
+        'R04': 'April 7, 2024',
+        'R05': 'April 21, 2024',
+        'R06': 'May 26, 2024',
+        'R07': 'June 2, 2024',
+        'R08': 'June 9, 2024',
+        'R09': 'July 7, 2024',
+        'R10': 'July 21, 2024',
+        'R11': 'July 28, 2024',
+        'R12': 'August 25, 2024',
+        'R13': 'September 1, 2024',
+        'R14': 'September 15, 2024',
+        'R15': 'October 20, 2024',
+        'R16': 'November 3, 2024',
+        'R17': 'November 17, 2024',
+        'R18': 'November 24, 2024',
+        'R19': 'December 1, 2024'
+    }
+}
+
 # Page config
 st.set_page_config(
     page_title="F1 Teammate Qualifying Predictor",
@@ -101,10 +176,18 @@ def load_available_events():
         for _, row in df.iterrows():
             event_key = row['event_key']
             if event_key not in event_details:
+                round_key = row.get('round', '')
+                season = row['season']
+                
+                # Get proper track name and date
+                track_name = TRACK_MAPPING.get(round_key, f"Round {round_key}")
+                event_date = SEASON_DATES.get(season, {}).get(round_key, "Date TBD")
+                
                 event_details[event_key] = {
-                    'season': row['season'],
-                    'round': row.get('round', ''),
-                    'track_name': row.get('track_name', ''),
+                    'season': season,
+                    'round': round_key,
+                    'track_name': track_name,
+                    'event_date': event_date,
                     'is_sprint_weekend': row.get('is_sprint_weekend', False)
                 }
         
@@ -183,14 +266,13 @@ def main():
             details = event_details.get(event_key, {})
             track_name = details.get('track_name', 'Unknown Track')
             round_num = details.get('round', '')
+            event_date = details.get('event_date', '')
             
-            # Extract date info from event key (e.g., 2025_R11 -> Round 11)
-            if '_R' in event_key:
-                round_info = f"Round {event_key.split('_R')[1]}"
+            # Create a rich description with round, track, and date
+            if round_num and track_name != f"Round {round_num}":
+                return f"{round_num} - {track_name} ({event_date})"
             else:
-                round_info = event_key
-            
-            return f"{round_info} - {track_name}"
+                return f"{event_key} - {track_name} ({event_date})"
         
         selected_event = st.sidebar.selectbox(
             "Event",
@@ -230,13 +312,15 @@ def main():
         # Event details
         if selected_event in event_details:
             details = event_details[selected_event]
-            col1, col2, col3 = st.columns(3)
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Season", details['season'])
             with col2:
                 st.metric("Round", details['round'] if details['round'] else "N/A")
             with col3:
                 st.metric("Track", details['track_name'] if details['track_name'] else "Unknown")
+            with col4:
+                st.metric("Date", details.get('event_date', 'TBD'))
             
             if details.get('is_sprint_weekend'):
                 st.info("🏁 **Sprint Weekend**: Using qualifying session that sets race grid (not sprint shootout)")
@@ -347,6 +431,33 @@ def main():
             })
             
             st.dataframe(styled_df, use_container_width=True)
+            
+            # Add prediction explanations
+            st.markdown("---")
+            st.subheader("🔍 Prediction Explanations")
+            
+            # Show explanations for each team
+            for _, row in display_df.iterrows():
+                team_name = row['🏎️ Team']
+                model_pick = row['🤖 Model Pick']
+                confidence = row['🎯 Model Confidence']
+                
+                # Generate explanation
+                explanation = generate_prediction_explanation(model_pick, confidence, team_name)
+                
+                with st.expander(f"📋 {team_name} - {model_pick} prediction"):
+                    st.markdown(explanation)
+                    
+                    # Add some context about what the model considers
+                    st.info("""
+                    **What the model analyzed:**
+                    - Recent qualifying performance and consistency
+                    - Head-to-head record against current teammate
+                    - Track-specific experience and historical performance
+                    - Practice session pace relative to field
+                    - Team performance trends and car development
+                    - Weather conditions and track characteristics
+                    """)
             
             # Legend and explanations
             st.markdown("---")
@@ -573,6 +684,25 @@ def create_display_table(results_df, salary_available):
         display_rows.append(row)
     
     return pd.DataFrame(display_rows)
+
+def generate_prediction_explanation(driver_name, confidence, constructor_name):
+    """Generate a human-readable explanation of the prediction."""
+    confidence_level = "very high" if confidence >= 0.8 else "high" if confidence >= 0.6 else "moderate" if confidence >= 0.5 else "low"
+    
+    explanations = [
+        f"**{driver_name}** is predicted to qualify ahead of their teammate at **{constructor_name}** with **{confidence_level} confidence** ({confidence:.1%}).",
+        f"The model analyzed historical performance, current form, track characteristics, and practice session data to make this prediction.",
+        f"Key factors likely include: driver's recent qualifying performance, head-to-head record against teammate, and track-specific experience."
+    ]
+    
+    if confidence >= 0.8:
+        explanations.append("🎯 **High confidence**: The model sees strong indicators supporting this prediction.")
+    elif confidence >= 0.6:
+        explanations.append("📊 **Good confidence**: Multiple factors align to support this prediction.")
+    else:
+        explanations.append("🤔 **Lower confidence**: The prediction is less certain, suggesting a close battle between teammates.")
+    
+    return " ".join(explanations)
 
 if __name__ == "__main__":
     main()
