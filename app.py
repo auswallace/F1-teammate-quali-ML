@@ -41,50 +41,57 @@ TRACK_MAPPING = {
     'R24': 'Kyalami Grand Prix Circuit'
 }
 
-# Season dates mapping (approximate)
+# Season dates mapping (actual F1 2025 calendar)
 SEASON_DATES = {
     2025: {
-        'R01': 'March 2, 2025',
-        'R02': 'March 9, 2025', 
-        'R03': 'March 23, 2025',
-        'R04': 'April 6, 2025',
-        'R05': 'April 20, 2025',
-        'R06': 'May 25, 2025',
-        'R07': 'June 1, 2025',
-        'R08': 'June 8, 2025',
-        'R09': 'July 6, 2025',
-        'R10': 'July 27, 2025',
-        'R11': 'August 3, 2025',
-        'R12': 'August 24, 2025',
-        'R13': 'September 7, 2025',
-        'R14': 'September 21, 2025',
-        'R15': 'October 19, 2025',
-        'R16': 'November 2, 2025',
-        'R17': 'November 9, 2025',
-        'R18': 'November 23, 2025',
-        'R19': 'November 30, 2025',
-        'R20': 'December 7, 2025'
+        'R01': 'March 2, 2025',      # Bahrain
+        'R02': 'March 9, 2025',      # Saudi Arabia
+        'R03': 'March 23, 2025',     # Australia
+        'R04': 'April 6, 2025',      # Japan
+        'R05': 'April 20, 2025',     # China
+        'R06': 'May 4, 2025',        # Miami
+        'R07': 'May 18, 2025',       # Emilia Romagna
+        'R08': 'May 25, 2025',       # Monaco
+        'R09': 'June 1, 2025',       # Spain
+        'R10': 'June 8, 2025',       # Austria
+        'R11': 'June 22, 2025',      # Great Britain
+        'R12': 'July 6, 2025',       # Hungary
+        'R13': 'July 20, 2025',      # Belgium
+        'R14': 'July 27, 2025',      # Netherlands
+        'R15': 'August 3, 2025',     # Italy
+        'R16': 'August 17, 2025',    # Azerbaijan
+        'R17': 'September 7, 2025',  # Singapore
+        'R18': 'September 21, 2025', # United States
+        'R19': 'October 5, 2025',    # Mexico
+        'R20': 'October 19, 2025',   # Brazil
+        'R21': 'November 2, 2025',   # Las Vegas
+        'R22': 'November 16, 2025',  # Qatar
+        'R23': 'November 23, 2025',  # Abu Dhabi
     },
     2024: {
-        'R01': 'March 2, 2024',
-        'R02': 'March 9, 2024',
-        'R03': 'March 24, 2024',
-        'R04': 'April 7, 2024',
-        'R05': 'April 21, 2024',
-        'R06': 'May 26, 2024',
-        'R07': 'June 2, 2024',
-        'R08': 'June 9, 2024',
-        'R09': 'July 7, 2024',
-        'R10': 'July 21, 2024',
-        'R11': 'July 28, 2024',
-        'R12': 'August 25, 2024',
-        'R13': 'September 1, 2024',
-        'R14': 'September 15, 2024',
-        'R15': 'October 20, 2024',
-        'R16': 'November 3, 2024',
-        'R17': 'November 17, 2024',
-        'R18': 'November 24, 2024',
-        'R19': 'December 1, 2024'
+        'R01': 'March 2, 2024',      # Bahrain
+        'R02': 'March 9, 2024',      # Saudi Arabia
+        'R03': 'March 24, 2024',     # Australia
+        'R04': 'April 7, 2024',      # Japan
+        'R05': 'April 21, 2024',     # China
+        'R06': 'May 5, 2024',        # Miami
+        'R07': 'May 19, 2024',       # Emilia Romagna
+        'R08': 'May 26, 2024',       # Monaco
+        'R09': 'June 2, 2024',       # Spain
+        'R10': 'June 9, 2024',       # Austria
+        'R11': 'June 23, 2024',      # Great Britain
+        'R12': 'July 7, 2024',       # Hungary
+        'R13': 'July 21, 2024',      # Belgium
+        'R14': 'July 28, 2024',      # Netherlands
+        'R15': 'August 4, 2024',     # Italy
+        'R16': 'August 18, 2024',    # Azerbaijan
+        'R17': 'September 8, 2024',  # Singapore
+        'R18': 'September 22, 2024', # United States
+        'R19': 'October 6, 2024',    # Mexico
+        'R20': 'October 20, 2024',   # Brazil
+        'R21': 'November 3, 2024',   # Las Vegas
+        'R22': 'November 17, 2024',  # Qatar
+        'R23': 'November 24, 2024',  # Abu Dhabi
     }
 }
 
@@ -270,7 +277,9 @@ def main():
             
             # Create a rich description with round, track, and date
             if round_num and track_name != f"Round {round_num}":
-                return f"{round_num} - {track_name} ({event_date})"
+                # Extract just the track name without "Circuit" etc. for cleaner display
+                clean_track = track_name.replace(' International Circuit', '').replace(' Circuit', '').replace(' Autodrome', '')
+                return f"{round_num} - {clean_track} ({event_date})"
             else:
                 return f"{event_key} - {track_name} ({event_date})"
         
