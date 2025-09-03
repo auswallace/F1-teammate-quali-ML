@@ -16,54 +16,54 @@ from src.eval import ModelEvaluator
 # F1 Calendar Database - Maps event keys to actual track names and dates
 F1_CALENDAR = {
     # 2025 Season
-    '2025_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'March 2, 2025'},
-    '2025_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'March 9, 2025'},
-    '2025_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'March 23, 2025'},
-    '2025_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'April 6, 2025'},
-    '2025_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'April 20, 2025'},
-    '2025_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 4, 2025'},
-    '2025_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 18, 2025'},
-    '2025_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 25, 2025'},
-    '2025_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'June 1, 2025'},
-    '2025_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'June 8, 2025'},
-    '2025_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'June 22, 2025'},
-    '2025_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'July 6, 2025'},
-    '2025_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'July 20, 2025'},
-    '2025_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'July 27, 2025'},
-    '2025_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'August 3, 2025'},
-    '2025_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'August 17, 2025'},
-    '2025_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'September 7, 2025'},
-    '2025_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'September 21, 2025'},
-    '2025_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'October 5, 2025'},
-    '2025_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'October 19, 2025'},
-    '2025_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'November 2, 2025'},
-    '2025_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'November 16, 2025'},
-    '2025_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'November 23, 2025'},
+    '2025_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'Mar 02'},
+    '2025_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'Mar 09'},
+    '2025_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'Mar 23'},
+    '2025_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'Apr 06'},
+    '2025_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'Apr 20'},
+    '2025_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 04'},
+    '2025_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 18'},
+    '2025_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 25'},
+    '2025_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'Jun 01'},
+    '2025_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'Jun 08'},
+    '2025_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'Jun 22'},
+    '2025_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'Jul 06'},
+    '2025_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'Jul 20'},
+    '2025_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'Jul 27'},
+    '2025_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'Aug 03'},
+    '2025_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'Aug 17'},
+    '2025_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'Sep 07'},
+    '2025_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'Sep 21'},
+    '2025_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'Oct 05'},
+    '2025_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'Oct 19'},
+    '2025_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'Nov 02'},
+    '2025_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'Nov 16'},
+    '2025_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'Nov 23'},
     
     # 2024 Season
-    '2024_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'March 2, 2024'},
-    '2024_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'March 9, 2024'},
-    '2024_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'March 24, 2024'},
-    '2024_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'April 7, 2024'},
-    '2024_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'April 21, 2024'},
-    '2024_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 5, 2024'},
-    '2024_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 19, 2024'},
-    '2024_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 26, 2024'},
-    '2024_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'June 2, 2024'},
-    '2024_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'June 9, 2024'},
-    '2024_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'June 23, 2024'},
-    '2024_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'July 7, 2024'},
-    '2024_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'July 21, 2024'},
-    '2024_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'July 28, 2024'},
-    '2024_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'August 4, 2024'},
-    '2024_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'August 18, 2024'},
-    '2024_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'September 8, 2024'},
-    '2024_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'September 22, 2024'},
-    '2024_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'October 6, 2024'},
-    '2024_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'October 20, 2024'},
-    '2024_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'November 3, 2024'},
-    '2024_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'November 17, 2024'},
-    '2024_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'November 24, 2024'},
+    '2024_R01': {'track': 'Bahrain International Circuit', 'location': 'Sakhir, Bahrain', 'date': 'Mar 02'},
+    '2024_R02': {'track': 'Jeddah Corniche Circuit', 'location': 'Jeddah, Saudi Arabia', 'date': 'Mar 09'},
+    '2024_R03': {'track': 'Albert Park Circuit', 'location': 'Melbourne, Australia', 'date': 'Mar 24'},
+    '2024_R04': {'track': 'Suzuka International Racing Course', 'location': 'Suzuka, Japan', 'date': 'Apr 07'},
+    '2024_R05': {'track': 'Shanghai International Circuit', 'location': 'Shanghai, China', 'date': 'Apr 21'},
+    '2024_R06': {'track': 'Miami International Autodrome', 'location': 'Miami, USA', 'date': 'May 05'},
+    '2024_R07': {'track': 'Imola Circuit', 'location': 'Imola, Italy', 'date': 'May 19'},
+    '2024_R08': {'track': 'Circuit de Monaco', 'location': 'Monte Carlo, Monaco', 'date': 'May 26'},
+    '2024_R09': {'track': 'Circuit de Barcelona-Catalunya', 'location': 'Barcelona, Spain', 'date': 'Jun 02'},
+    '2024_R10': {'track': 'Red Bull Ring', 'location': 'Spielberg, Austria', 'date': 'Jun 09'},
+    '2024_R11': {'track': 'Silverstone Circuit', 'location': 'Silverstone, UK', 'date': 'Jun 23'},
+    '2024_R12': {'track': 'Hungaroring', 'location': 'Budapest, Hungary', 'date': 'Jul 07'},
+    '2024_R13': {'track': 'Circuit de Spa-Francorchamps', 'location': 'Spa, Belgium', 'date': 'Jul 21'},
+    '2024_R14': {'track': 'Circuit Zandvoort', 'location': 'Zandvoort, Netherlands', 'date': 'Jul 28'},
+    '2024_R15': {'track': 'Monza Circuit', 'location': 'Monza, Italy', 'date': 'Aug 04'},
+    '2024_R16': {'track': 'Baku City Circuit', 'location': 'Baku, Azerbaijan', 'date': 'Aug 18'},
+    '2024_R17': {'track': 'Marina Bay Street Circuit', 'location': 'Singapore', 'date': 'Sep 08'},
+    '2024_R18': {'track': 'Circuit of the Americas', 'location': 'Austin, USA', 'date': 'Sep 22'},
+    '2024_R19': {'track': 'Autódromo Hermanos Rodríguez', 'location': 'Mexico City, Mexico', 'date': 'Oct 06'},
+    '2024_R20': {'track': 'Interlagos Circuit', 'location': 'São Paulo, Brazil', 'date': 'Oct 20'},
+    '2024_R21': {'track': 'Las Vegas Strip Circuit', 'location': 'Las Vegas, USA', 'date': 'Nov 03'},
+    '2024_R22': {'track': 'Lusail International Circuit', 'location': 'Doha, Qatar', 'date': 'Nov 17'},
+    '2024_R23': {'track': 'Yas Marina Circuit', 'location': 'Abu Dhabi, UAE', 'date': 'Nov 24'},
 }
 
 # Page config
@@ -116,20 +116,7 @@ def check_data():
         'input_has_files': input_data.exists() and len(list(input_data.rglob("*.parquet"))) > 0
     }
 
-# Check if salary data is available
-@st.cache_data
-def check_salary_data():
-    """Check if driver salary data is available."""
-    salary_path = Path("data/input/driver_salary.csv")
-    if salary_path.exists():
-        try:
-            df = pd.read_csv(salary_path)
-            required_cols = ['driver_id', 'salary_usd']
-            if all(col in df.columns for col in required_cols):
-                return True, df
-        except:
-            pass
-    return False, None
+
 
 # Load available events
 @st.cache_data
@@ -192,7 +179,6 @@ def main():
     config = load_config()
     model_status = check_models()
     data_status = check_data()
-    salary_available, salary_df = check_salary_data()
     
     # Check if models are available
     if not model_status['all_models']:
@@ -277,12 +263,6 @@ def main():
     st.sidebar.info(f"**Labeled Data**: {'✅ Ready' if data_status['labeled'] else '❌ Missing'}")
     st.sidebar.info(f"**F1 Data Source**: {'✅ Linked' if data_status['input_linked'] else '❌ Missing'}")
     
-    # Salary baseline info
-    if salary_available:
-        st.sidebar.success("💰 **Salary baseline available**")
-    else:
-        st.sidebar.info("💰 **Salary baseline**: Add `data/input/driver_salary.csv` to enable")
-    
     # Main content area
     if selected_event:
         st.header(f"🏁 Predictions for {selected_event}")
@@ -335,14 +315,6 @@ def main():
             # Compute Baseline A: Prior head-to-head leader
             results_df = compute_baseline_a(results_df, selected_event, details['season'])
             
-            # Compute Baseline B: Salary-based (if available)
-            if salary_available:
-                results_df = compute_baseline_b(results_df, salary_df)
-            else:
-                # Initialize Baseline B columns as NaN if not available
-                results_df['baseline_b_pick'] = np.nan
-                results_df['baseline_b_correct'] = np.nan
-            
             # Calculate accuracy metrics
             metrics = calculate_accuracy_metrics(results_df)
             
@@ -354,20 +326,14 @@ def main():
             **How to read these metrics:** 
             - **Model Accuracy**: How often our ML model correctly predicted the teammate winner
             - **Baseline A**: How often the driver with better head-to-head record won (simple heuristic)
-            - **Baseline B**: How often the higher-paid driver won (if salary data available)
             """)
             
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
             
             with col1:
                 st.metric("🤖 ML Model Accuracy", f"{metrics['model_accuracy']:.1%}")
             with col2:
                 st.metric("📈 H2H Record Accuracy", f"{metrics['baseline_a_accuracy']:.1%}")
-            with col3:
-                if salary_available:
-                    st.metric("💰 Salary-Based Accuracy", f"{metrics['baseline_b_accuracy']:.1%}")
-                else:
-                    st.metric("💰 Salary Baseline", "N/A")
             
             # Display predictions table
             st.subheader("🏁 Team-by-Team Predictions")
@@ -379,7 +345,7 @@ def main():
             """)
             
             # Create a more readable table
-            display_df = create_display_table(results_df, salary_available)
+            display_df = create_display_table(results_df)
             
             # Apply better styling with custom CSS
             st.markdown("""
@@ -405,7 +371,7 @@ def main():
             
             styled_df = display_df.style.applymap(
                 color_correctness, 
-                subset=['✅ Model Correct', '✅ H2H Correct', '✅ Salary Correct']
+                subset=['✅ Model Correct', '✅ H2H Correct']
             ).format({
                 '🎯 Model Confidence': '{:.1%}'
             })
@@ -457,7 +423,6 @@ def main():
                 st.markdown("""
                 **📊 Baseline Comparisons:**
                 - **H2H Record**: Driver with better head-to-head record entering the event
-                - **Salary-Based**: Higher-paid driver (if salary data available)
                 - **Baseline Correct**: Same color coding as model predictions
                 """)
             
@@ -550,54 +515,7 @@ def compute_baseline_a(results_df, event_key, season):
         results_df['baseline_a_correct'] = np.nan
         return results_df
 
-def compute_baseline_b(results_df, salary_df):
-    """Compute Baseline B: Salary-based prediction."""
-    try:
-        # Initialize baseline columns
-        results_df['baseline_b_pick'] = np.nan
-        results_df['baseline_b_correct'] = np.nan
-        
-        # For each team, pick the higher salary driver
-        for constructor_id in results_df['constructor_id'].unique():
-            team_drivers = results_df[results_df['constructor_id'] == constructor_id]
-            if len(team_drivers) != 2:
-                continue
-                
-            driver1, driver2 = team_drivers.iloc[0], team_drivers.iloc[1]
-            
-            # Get salaries
-            salary1 = salary_df[salary_df['driver_id'] == driver1['driver_id']]['salary_usd'].iloc[0] if len(salary_df[salary_df['driver_id'] == driver1['driver_id']]) > 0 else 0
-            salary2 = salary_df[salary_df['driver_id'] == driver2['driver_id']]['salary_usd'].iloc[0] if len(salary_df[salary_df['driver_id'] == driver2['driver_id']]) > 0 else 0
-            
-            # Pick the higher salary driver
-            if salary1 > salary2:
-                baseline_pick = driver1['driver_id']
-            elif salary2 > salary1:
-                baseline_pick = driver2['driver_id']
-            else:
-                baseline_pick = None  # Equal salaries
-            
-            # Set baseline picks and correctness
-            for _, driver in team_drivers.iterrows():
-                if baseline_pick is not None:
-                    is_baseline_pick = (driver['driver_id'] == baseline_pick)
-                    results_df.loc[results_df['driver_id'] == driver['driver_id'], 'baseline_b_pick'] = is_baseline_pick
-                    
-                    # Check if baseline was correct
-                    if pd.notna(driver['actual_beats_teammate']):
-                        baseline_correct = (is_baseline_pick == driver['actual_beats_teammate'])
-                        results_df.loc[results_df['driver_id'] == driver['driver_id'], 'baseline_b_correct'] = baseline_correct
-                else:
-                    results_df.loc[results_df['driver_id'] == driver['driver_id'], 'baseline_b_pick'] = None
-                    results_df.loc[results_df['driver_id'] == driver['driver_id'], 'baseline_b_correct'] = None
-        
-        return results_df
-        
-    except Exception as e:
-        st.warning(f"Warning: Could not compute Baseline B: {e}")
-        results_df['baseline_b_pick'] = np.nan
-        results_df['baseline_b_correct'] = np.nan
-        return results_df
+
 
 def calculate_accuracy_metrics(results_df):
     """Calculate accuracy metrics for the event."""
@@ -617,16 +535,9 @@ def calculate_accuracy_metrics(results_df):
     else:
         metrics['baseline_a_accuracy'] = 0
     
-    # Baseline B accuracy (if available)
-    if 'baseline_b_correct' in results_df.columns:
-        baseline_b_correct = results_df['baseline_b_correct'].dropna()
-        metrics['baseline_b_accuracy'] = baseline_b_correct.mean() if len(baseline_b_correct) > 0 else 0
-    else:
-        metrics['baseline_b_accuracy'] = 0
-    
     return metrics
 
-def create_display_table(results_df, salary_available):
+def create_display_table(results_df):
     """Create a display-friendly table for the results."""
     # Group by constructor to show teammate pairs
     display_rows = []
@@ -655,10 +566,8 @@ def create_display_table(results_df, salary_available):
             '🎯 Model Confidence': winner['model_confidence'],
             '🏁 Actual Winner': winner['driver_name'] if winner['actual_beats_teammate'] == 1 else loser['driver_name'],
             '📈 H2H Pick': winner['driver_name'] if winner['baseline_a_pick'] == 1 else (loser['driver_name'] if loser['baseline_a_pick'] == 1 else 'No Prior'),
-            '💰 Salary Pick': winner['driver_name'] if winner['baseline_b_pick'] == 1 else (loser['driver_name'] if loser['baseline_b_pick'] == 1 else 'Equal Salary') if salary_available else 'N/A',
             '✅ Model Correct': winner['actual_beats_teammate'] == 1,
-            '✅ H2H Correct': winner.get('baseline_a_correct', None) if pd.notna(winner.get('baseline_a_correct', None)) else None,
-            '✅ Salary Correct': winner.get('baseline_b_correct', None) if pd.notna(winner.get('baseline_b_correct', None)) else None
+            '✅ H2H Correct': winner.get('baseline_a_correct', None) if pd.notna(winner.get('baseline_a_correct', None)) else None
         }
         
         display_rows.append(row)
