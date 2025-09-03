@@ -244,6 +244,10 @@ def main():
             # Compute Baseline B: Salary-based (if available)
             if salary_available:
                 results_df = compute_baseline_b(results_df, salary_df)
+            else:
+                # Initialize Baseline B columns as NaN if not available
+                results_df['baseline_b_pick'] = np.nan
+                results_df['baseline_b_correct'] = np.nan
             
             # Calculate accuracy metrics
             metrics = calculate_accuracy_metrics(results_df)
@@ -426,16 +430,25 @@ def calculate_accuracy_metrics(results_df):
     metrics = {}
     
     # Model accuracy
-    model_correct = results_df['model_correct'].dropna()
-    metrics['model_accuracy'] = model_correct.mean() if len(model_correct) > 0 else 0
+    if 'model_correct' in results_df.columns:
+        model_correct = results_df['model_correct'].dropna()
+        metrics['model_accuracy'] = model_correct.mean() if len(model_correct) > 0 else 0
+    else:
+        metrics['model_accuracy'] = 0
     
     # Baseline A accuracy (only on pairs where baseline had a pick)
-    baseline_a_correct = results_df['baseline_a_correct'].dropna()
-    metrics['baseline_a_accuracy'] = baseline_a_correct.mean() if len(baseline_a_correct) > 0 else 0
+    if 'baseline_a_correct' in results_df.columns:
+        baseline_a_correct = results_df['baseline_a_correct'].dropna()
+        metrics['baseline_a_accuracy'] = baseline_a_correct.mean() if len(baseline_a_correct) > 0 else 0
+    else:
+        metrics['baseline_a_accuracy'] = 0
     
     # Baseline B accuracy (if available)
-    baseline_b_correct = results_df['baseline_b_correct'].dropna()
-    metrics['baseline_b_accuracy'] = baseline_b_correct.mean() if len(baseline_b_correct) > 0 else 0
+    if 'baseline_b_correct' in results_df.columns:
+        baseline_b_correct = results_df['baseline_b_correct'].dropna()
+        metrics['baseline_b_accuracy'] = baseline_b_correct.mean() if len(baseline_b_correct) > 0 else 0
+    else:
+        metrics['baseline_b_accuracy'] = 0
     
     return metrics
 
@@ -470,8 +483,8 @@ def create_display_table(results_df, salary_available):
             'Baseline A Pick': winner['driver_name'] if winner['baseline_a_pick'] == 1 else (loser['driver_name'] if loser['baseline_a_pick'] == 1 else 'No Prior'),
             'Baseline B Pick': winner['driver_name'] if winner['baseline_b_pick'] == 1 else (loser['driver_name'] if loser['baseline_b_pick'] == 1 else 'Equal Salary') if salary_available else 'N/A',
             'Model Correct': winner['actual_beats_teammate'] == 1,
-            'Baseline A Correct': winner['baseline_a_correct'] if pd.notna(winner['baseline_a_correct']) else None,
-            'Baseline B Correct': winner['baseline_b_correct'] if pd.notna(winner['baseline_b_correct']) else None
+            'Baseline A Correct': winner.get('baseline_a_correct', None) if pd.notna(winner.get('baseline_a_correct', None)) else None,
+            'Baseline B Correct': winner.get('baseline_b_correct', None) if pd.notna(winner.get('baseline_b_correct', None)) else None
         }
         
         display_rows.append(row)
