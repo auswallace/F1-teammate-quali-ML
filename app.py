@@ -354,6 +354,23 @@ def main():
             # Create a more readable table
             display_df = create_display_table(results_df)
             
+            # Quick summary table at the top
+            st.markdown("**📊 Quick Summary**")
+            summary_cols = st.columns(4)
+            
+            with summary_cols[0]:
+                st.metric("Teams", len(display_df))
+            with summary_cols[1]:
+                correct_predictions = display_df['✅ Model Correct'].sum()
+                st.metric("Model Correct", f"{correct_predictions}/{len(display_df)}")
+            with summary_cols[2]:
+                avg_confidence = display_df['🎯 Model Confidence'].mean()
+                st.metric("Avg Confidence", f"{avg_confidence:.1%}")
+            with summary_cols[3]:
+                h2h_correct = display_df['✅ H2H Correct'].dropna().sum()
+                h2h_total = display_df['✅ H2H Correct'].notna().sum()
+                st.metric("H2H Correct", f"{h2h_correct}/{h2h_total}" if h2h_total > 0 else "N/A")
+            
             # Apply F1-style styling with custom CSS
             contrast_style = """
             .team-row {
@@ -432,12 +449,56 @@ def main():
             # Display F1-style rich table with circular icons
             st.markdown("### 🏁 Team-by-Team Predictions")
             
-            # Get country code for the event
-            event_info = F1_CALENDAR.get(selected_event, {})
-            country_code = country_code_for_event(event_info)
+            # Add a toggle to switch between visual and table views
+            view_mode = st.radio(
+                "Choose your view:",
+                ["📊 Clean Table", "🎨 Rich Visual Layout", "📋 Simple Data Only"],
+                horizontal=True,
+                index=0
+            )
             
-            # Display each team with rich visuals using Streamlit components
-            for _, row in display_df.iterrows():
+            if view_mode == "📊 Clean Table":
+                # Show the original clean table format
+                st.dataframe(
+                    display_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Add some styling info
+                st.info("""
+                **Table Guide:**
+                - **Model Pick**: Driver predicted to qualify ahead (with confidence %)
+                - **Actual Winner**: What really happened in qualifying
+                - **H2H Pick**: Driver with better head-to-head record
+                - **✅/❌**: Whether predictions were correct
+                """)
+                
+            elif view_mode == "📋 Simple Data Only":
+                # Show just the raw data without styling
+                st.dataframe(
+                    display_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                # Add download option
+                csv = display_df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download as CSV",
+                    data=csv,
+                    file_name=f"f1_predictions_{selected_event}.csv",
+                    mime="text/csv"
+                )
+                
+            else:
+                # Rich visual layout
+                # Get country code for the event
+                event_info = F1_CALENDAR.get(selected_event, {})
+                country_code = country_code_for_event(event_info)
+                
+                # Display each team with rich visuals using Streamlit components
+                for _, row in display_df.iterrows():
                 team_name = row['🏎️ Team']
                 driver_a = row['Driver A']
                 driver_b = row['Driver B']
