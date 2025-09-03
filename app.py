@@ -12,6 +12,7 @@ sys.path.append(str(Path(__file__).parent / "src"))
 
 from src.predict import TeammatePredictor
 from src.eval import ModelEvaluator
+from src.assets import ensure_dirs, resolve_image, circularize, country_code_for_event
 
 # F1 Calendar Database - Maps event keys to actual track names and dates
 F1_CALENDAR = {
@@ -73,6 +74,9 @@ st.set_page_config(
     layout="wide"
 )
 
+# Initialize assets
+ensure_dirs()
+
 # Title and description
 st.title("🏎️ F1 Teammate Qualifying Predictor")
 st.markdown("""
@@ -84,6 +88,9 @@ The model considers driver form, team performance, track characteristics, practi
 
 # Sidebar for configuration
 st.sidebar.header("Configuration")
+
+# High-contrast mode toggle
+high_contrast = st.sidebar.checkbox("🎨 High-contrast mode (F1-ish)", value=False)
 
 # Check if models are available
 @st.cache_data
@@ -347,36 +354,206 @@ def main():
             # Create a more readable table
             display_df = create_display_table(results_df)
             
-            # Apply better styling with custom CSS
-            st.markdown("""
-            <style>
-            .stDataFrame {
-                font-size: 14px;
+            # Apply F1-style styling with custom CSS
+            contrast_style = """
+            .team-row {
+                background: rgba(0, 0, 0, 0.95);
+                border: 2px solid #e10600;
+                border-radius: 8px;
+                padding: 20px;
+                margin: 15px 0;
+                color: white;
             }
-            .stDataFrame th {
+            .team-row h3, .team-row h4, .team-row h5 {
+                color: white !important;
+                font-weight: 700;
+            }
+            .team-row p {
+                color: #f0f0f0 !important;
+                font-weight: 500;
+            }
+            """ if high_contrast else ""
+            
+            st.markdown(f"""
+            <style>
+            .stDataFrame {{
+                font-size: 14px;
+            }}
+            .stDataFrame th {{
                 background-color: #f0f2f6;
                 font-weight: bold;
-            }
+            }}
+            .circle-img {{ 
+                border-radius: 50%; 
+                width: 48px; 
+                height: 48px; 
+                object-fit: cover; 
+                border: 2px solid #e0e0e0;
+            }}
+            .circle-flag {{ 
+                border-radius: 50%; 
+                width: 28px; 
+                height: 28px; 
+                object-fit: cover; 
+                border: 1px solid #ddd;
+            }}
+            .circle-team {{ 
+                border-radius: 50%; 
+                width: 40px; 
+                height: 40px; 
+                object-fit: contain; 
+                background: #fff; 
+                border: 1px solid #eee;
+            }}
+            .rowok {{ 
+                background: rgba(0, 200, 0, 0.06); 
+            }}
+            .rowbad {{ 
+                background: rgba(200, 0, 0, 0.06); 
+            }}
+            .f1-header {{
+                background: linear-gradient(135deg, #e10600 0%, #ff6b6b 100%);
+                color: white;
+                padding: 10px;
+                border-radius: 8px;
+                margin: 10px 0;
+            }}
+            .team-row {{
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 15px;
+                margin: 10px 0;
+            }}
+            {contrast_style}
             </style>
             """, unsafe_allow_html=True)
             
-            # Color code the rows based on correctness with better colors
-            def color_correctness(val):
-                if pd.isna(val):
-                    return ''
-                elif val:  # Correct prediction
-                    return 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;'
-                else:  # Incorrect prediction
-                    return 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'
+            # Display F1-style rich table with circular icons
+            st.markdown("### 🏁 Team-by-Team Predictions")
             
-            styled_df = display_df.style.applymap(
-                color_correctness, 
-                subset=['✅ Model Correct', '✅ H2H Correct']
-            ).format({
-                '🎯 Model Confidence': '{:.1%}'
-            })
+            # Get country code for the event
+            event_info = F1_CALENDAR.get(event_key, {})
+            country_code = country_code_for_event(event_info)
             
-            st.dataframe(styled_df, use_container_width=True)
+            # Display each team with rich visuals
+            for _, row in display_df.iterrows():
+                team_name = row['🏎️ Team']
+                driver_a = row['Driver A']
+                driver_b = row['Driver B']
+                model_pick = row['🤖 Model Pick']
+                confidence = row['🎯 Model Confidence']
+                actual_winner = row['🏁 Actual Winner']
+                h2h_pick = row['📈 H2H Pick']
+                model_correct = row['✅ Model Correct']
+                h2h_correct = row['✅ H2H Correct']
+                
+                # Determine team constructor ID for assets
+                constructor_id = team_name.upper().replace(' ', '_')
+                
+                # Resolve assets
+                try:
+                    flag_img = circularize(resolve_image("flag", country_code or "xx", "data/assets/placeholders/flag.png"), size=28)
+                    team_img = circularize(resolve_image("team", constructor_id, "data/assets/placeholders/team.png"), size=40)
+                    driver_a_img = circularize(resolve_image("driver", driver_a.split()[-1].upper()[:3], "data/assets/placeholders/driver.png"), size=48)
+                    driver_b_img = circularize(resolve_image("driver", driver_b.split()[-1].upper()[:3], "data/assets/placeholders/driver.png"), size=48)
+                except Exception as e:
+                    st.warning(f"Asset loading error: {e}")
+                    flag_img = "data/assets/placeholders/flag.png"
+                    team_img = "data/assets/placeholders/team.png"
+                    driver_a_img = "data/assets/placeholders/driver.png"
+                    driver_b_img = "data/assets/placeholders/driver.png"
+                
+                # Create team row with F1 styling
+                text_color = "#ffffff" if high_contrast else "#333333"
+                subtext_color = "#f0f0f0" if high_contrast else "#666666"
+                background_color = "#1a1a1a" if high_contrast else "#f8f9fa"
+                
+                with st.container():
+                    st.markdown(f"""
+                    <div class="team-row">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <img src="data:image/png;base64,{get_image_base64(flag_img)}" class="circle-flag" style="margin-right: 10px;">
+                            <h4 style="margin: 0; color: #e10600;">{event_info.get('track', 'Unknown Track')}</h4>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <img src="data:image/png;base64,{get_image_base64(team_img)}" class="circle-team" style="margin-right: 15px;">
+                            <h3 style="margin: 0; color: {text_color};">{team_name}</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                            <!-- Driver A -->
+                            <div style="text-align: center; padding: 15px; border: 2px solid {'#28a745' if model_pick == driver_a else '#6c757d'}; border-radius: 8px; background: {'rgba(40, 167, 69, 0.1)' if model_pick == driver_a else 'rgba(108, 117, 125, 0.1)'};">
+                                <img src="data:image/png;base64,{get_image_base64(driver_a_img)}" class="circle-img" style="margin-bottom: 10px;">
+                                <h4 style="margin: 5px 0; color: {text_color};">{driver_a}</h4>
+                                <p style="margin: 5px 0; color: {subtext_color};">Driver A</p>
+                            </div>
+                            
+                            <!-- Driver B -->
+                            <div style="text-align: center; padding: 15px; border: 2px solid {'#28a745' if model_pick == driver_b else '#6c757d'}; border-radius: 8px; background: {'rgba(40, 167, 69, 0.1)' if model_pick == driver_b else 'rgba(108, 117, 125, 0.1)'};">
+                                <img src="data:image/png;base64,{get_image_base64(driver_b_img)}" class="circle-img" style="margin-bottom: 10px;">
+                                <h4 style="margin: 5px 0; color: {text_color};">{driver_b}</h4>
+                                <p style="margin: 5px 0; color: {subtext_color};">Driver B</p>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: {background_color}; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                                <div style="text-align: center;">
+                                    <h5 style="margin: 5px 0; color: #e10600;">🤖 Model Pick</h5>
+                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{model_pick}</p>
+                                    <p style="margin: 5px 0; color: {subtext_color};">{confidence:.1%} confidence</p>
+                                </div>
+                                <div style="text-align: center;">
+                                    <h5 style="margin: 5px 0; color: #007bff;">🏁 Actual Winner</h5>
+                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{actual_winner}</p>
+                                </div>
+                                <div style="text-align: center;">
+                                    <h5 style="margin: 5px 0; color: #6f42c1;">📈 H2H Pick</h5>
+                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{h2h_pick}</p>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
+                                <span style="padding: 5px 15px; border-radius: 20px; background: {'#28a745' if model_correct else '#dc3545'}; color: white; font-weight: bold;">
+                                    {'✅ Correct' if model_correct else '❌ Incorrect'}
+                                </span>
+                                <span style="padding: 5px 15px; border-radius: 20px; background: {'#28a745' if h2h_correct else '#dc3545' if pd.notna(h2h_correct) else '#6c757d'}; color: white; font-weight: bold;">
+                                    {'✅ H2H Correct' if h2h_correct else '❌ H2H Incorrect' if pd.notna(h2h_correct) else 'No H2H Data'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            # Add legend
+            st.markdown("---")
+            st.markdown("""
+            <div class="f1-header">
+                <h4 style="margin: 0;">📚 Icon Legend</h4>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown("""
+                **🚩 Flag**: Host country of the race
+                **🏁 Team Logo**: Constructor branding
+                **👤 Driver**: Individual driver headshot
+                """)
+            with col2:
+                st.markdown("""
+                **🤖 Model Pick**: ML prediction with confidence
+                **🏁 Actual Winner**: What really happened
+                **📈 H2H Pick**: Head-to-head record baseline
+                """)
+            with col3:
+                st.markdown("""
+                **✅ Green Border**: Model's predicted winner
+                **🎯 Confidence**: Calibrated probability
+                **📊 Comparison**: Model vs baseline accuracy
+                """)
             
             # Add prediction explanations
             st.markdown("---")
@@ -573,6 +750,24 @@ def create_display_table(results_df):
         display_rows.append(row)
     
     return pd.DataFrame(display_rows)
+
+def get_image_base64(image_path):
+    """Convert image to base64 for HTML display."""
+    try:
+        if isinstance(image_path, str):
+            image_path = Path(image_path)
+        
+        if not image_path.exists():
+            # Return placeholder base64
+            return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+        
+        import base64
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode('utf-8')
+    except Exception as e:
+        st.warning(f"Image loading error: {e}")
+        # Return transparent pixel
+        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
 
 def generate_prediction_explanation(driver_name, confidence, constructor_name):
     """Generate a human-readable explanation of the prediction."""
