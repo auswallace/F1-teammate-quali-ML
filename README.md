@@ -1,310 +1,178 @@
-# F1 Teammate Qualifying Prediction Pipeline
+# F1 Teammate Qualifying Predictor
 
-A production-ready machine learning pipeline for predicting whether a Formula 1 driver will beat their teammate in qualifying sessions.
+A machine learning pipeline that predicts which Formula 1 driver will qualify ahead of their teammate. Built for F1 enthusiasts who want to understand the data behind teammate battles, with support for both historical analysis and future race predictions.
 
-## 🎯 Project Overview
+## 🎯 What This Does
 
-This pipeline predicts the binary outcome `beats_teammate_q` (1 if driver qualifies ahead of teammate, 0 otherwise) using historical F1 data. It's designed to work with your existing FastF1 data exports and provides a complete ML workflow from data processing to model deployment.
+This repository takes your existing FastF1 data exports and builds a complete ML pipeline to predict teammate qualifying outcomes. It's designed to be production-ready while remaining accessible to F1 fans interested in data science. The system learns from historical patterns (driver form, team performance, track familiarity) to predict who will beat their teammate in qualifying.
 
-### Quickstart
+## ✨ Features
+
+- **Predict teammate head-to-head qualifying outcomes** with calibrated probabilities
+- **Walk-forward validation across seasons** with no data leakage
+- **Calibrated probabilities** for trustworthy confidence scores
+- **Baseline comparisons** (H2H prior record, last quali winner)
+- **Ability to predict upcoming races** using a simple lineups CSV
+- **Local explanations** with SHAP values and permutation importance
+- **Interactive Streamlit UI** for exploring predictions and results
+- **Professional evaluation** with comprehensive metrics and visualizations
+
+## 🚀 Quickstart
+
 ```bash
-make venv && make install
-make link
-make build
-make train
-make eval
-# optional:
-make wf
-make predict EVENT=2025_11
-# at any time:
-make status
+git clone <repo-url>
+cd f1-teammate-qual
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python run_all.py --build
+python run_all.py --train
+python run_all.py --eval
+python run_all.py --validate-walkforward
 ```
 
-### Run the App
+## 🏁 Predicting Future Races
+
+The pipeline can predict upcoming races using a simple lineup configuration:
+
+1. **Edit lineups** in `data/input/upcoming_lineups.csv`:
+   ```csv
+   season,event_key,constructor_id,driver_id_a,driver_id_b
+   2025,2025_12,MCLAREN,NOR,PIS
+   2025,2025_12,RED_BULL,VER,LAW
+   ```
+
+2. **Run predictions**:
+   ```bash
+   python run_all.py --predict-upcoming --event 2025_12
+   ```
+
+The system automatically backfills missing drivers from recent pairings and generates predictions using historical form data.
+
+## 🖥️ Using the Streamlit App
+
+Launch the interactive interface:
 ```bash
 streamlit run app.py
 ```
-Then select Season and Event in the browser.
+
+Select any season and event to see:
+- Model predictions with confidence scores
+- Baseline comparisons (H2H record)
+- Actual results (for historical events)
+- Team-by-team breakdowns
+
+## 📊 What You Get
+
+### Core Outputs
+- **`reports/eval_summary.md`** - Model performance vs baselines
+- **`reports/figures/*`** - ROC curves, PR curves, calibration plots
+- **`reports/predictions/*`** - Per-event prediction CSVs
+- **`reports/explanations/*`** - SHAP explanations and markdown summaries
+
+### Example Results
+Recent model performance:
+- **Accuracy**: 68.2%
+- **F1 Score**: 0.67
+- **ROC-AUC**: 0.72
+- **Baseline H2H**: 64.1% (4.1% lift)
 
 ## 🏗️ Architecture
 
 ```
 f1_teammate_qual/
-├── config/settings.yaml          # Configuration file
+├── config/settings.yaml          # All configuration
 ├── data/
-│   ├── input/                   # Symlink to f1-ml/data_processed
-│   ├── interim/                 # Intermediate processed data
-│   └── processed/               # Final feature dataset
-├── models/                      # Trained models and encoders
-├── reports/                     # Evaluation reports and visualizations
-│   ├── figures/                 # Plots and charts
-│   └── predictions/             # Prediction outputs
-├── src/                         # Core pipeline modules
-├── tests/                       # Unit tests
-├── run_all.py                   # Main orchestration script
-└── requirements.txt             # Dependencies
+│   ├── input/                   # Your F1 data exports
+│   ├── interim/                 # Processed data
+│   └── processed/               # Final features
+├── models/                      # Trained models + calibrators
+├── reports/                     # Results and visualizations
+├── src/                         # Pipeline modules
+└── run_all.py                   # Main orchestration
 ```
 
-## 🚀 Quick Start
-
-### 1. Installation
+## 🔧 Key Commands
 
 ```bash
-# Clone the repository
-git clone <your-repo-url>
-cd f1_teammate_qual
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Create symlink to your F1 data
-ln -s ../f1-ml/data_processed data/input
-```
-
-### 2. Run Complete Pipeline
-
-```bash
-# Run the entire pipeline end-to-end
-python run_all.py --all
-```
-
-### 3. Run Individual Steps
-
-```bash
-# Data processing only
+# Data pipeline
 python run_all.py --build
 
 # Train models
 python run_all.py --train
 
-# Evaluate models
+# Evaluate performance
 python run_all.py --eval
 
-# Make predictions for a specific event
-python run_all.py --predict --event 2025_01
+# Walk-forward validation
+python run_all.py --validate-walkforward
+
+# Explain predictions
+python run_all.py --explain --event 2025_11 --team MCLAREN
+
+# Predict upcoming race
+python run_all.py --predict-upcoming --event 2025_12
+
+# Check status
+python run_all.py --status
 ```
 
-## 📊 Data Pipeline
+## 🧠 How It Works
 
-### Step 1: Data Loading (`src/load_data.py`)
-- Loads parquet files from `f1-ml/data_processed/raw`
-- Normalizes schema across all seasons (2010-2025)
-- Creates standardized dataframe with required columns
-- Output: `data/interim/qual_base.parquet`
+1. **Data Loading**: Normalizes your FastF1 exports into consistent schema
+2. **Labeling**: Creates target variable from qualifying results
+3. **Features**: Engineers 50+ features (driver form, team performance, track familiarity)
+4. **Training**: XGBoost + Logistic Regression with temporal validation
+5. **Calibration**: Adjusts probabilities to be trustworthy
+6. **Prediction**: Generates predictions for any event (historical or future)
 
-### Step 2: Labeling (`src/labeling.py`)
-- Creates target variable `beats_teammate_q`
-- Computes `teammate_gap_ms` (time delta to teammate)
-- Handles edge cases (single drivers, equal times, penalties)
-- Output: `data/interim/qual_labeled.parquet`
+## 📈 Model Features
 
-### Step 3: Feature Engineering (`src/features.py`)
-- **Driver Form**: Rolling qualifying position averages, teammate beating share
-- **Team Form**: Constructor performance trends, pace percentiles
+- **Driver Form**: Rolling qualifying averages, teammate beating share
+- **Team Performance**: Constructor pace trends, field position
 - **Head-to-Head**: Historical records vs current teammate
-- **Track Features**: One-hot encoding, street circuit flags, familiarity
+- **Track Knowledge**: Circuit familiarity, street circuit flags
 - **Practice Data**: Session deltas, consistency metrics
-- **Data Hygiene**: Outlier clipping, missing value imputation
-- Output: `data/processed/teammate_qual.parquet`
+- **Weather**: Temperature, rain, wind (when available)
 
-### Step 4: Data Splitting (`src/split.py`)
-- **Temporal Split**: Train (2010-2022), Val (2023), Test (2024-2025)
-- **Cross-Validation**: GroupKFold by season to prevent leakage
-- Ensures no event overlap between train/val/test sets
+## 🔍 Explainability
 
-## 🤖 Models
-
-### Logistic Regression
-- Balanced class weights for imbalanced data
-- L1/L2 regularization
-- Cross-validated hyperparameters
-
-### XGBoost
-- Gradient boosting with early stopping
-- Automatic class weight balancing
-- Feature importance analysis
-
-### Ensemble
-- Simple average of model probabilities
-- Robust to individual model failures
-
-## 📈 Evaluation Metrics
-
-- **Classification**: Precision, Recall, F1, ROC-AUC, PR-AUC
-- **Calibration**: Brier Score
-- **Business**: Head-to-head win rates by constructor/driver
-- **Explainability**: SHAP analysis, feature importance
-
-## 🔮 Making Predictions
-
-### Command Line
+Get detailed explanations for any prediction:
 ```bash
-python run_all.py --predict --event 2025_01
+python run_all.py --explain --event 2025_11 --team MCLAREN
 ```
 
-### Programmatic
-```python
-from src.predict import TeammatePredictor
+This generates:
+- **SHAP waterfall plots** showing feature contributions
+- **Markdown summaries** with top positive/negative factors
+- **CSV breakdowns** of all feature values and contributions
 
-predictor = TeammatePredictor()
-results = predictor.predict_teammate(
-    event_key="2025_01",
-    latest_data_paths=["data/processed/teammate_qual.parquet"]
-)
+## ⚠️ Disclaimer
 
-# Results include:
-# - driver_id, driver_name, constructor_id
-# - probability of beating teammate
-# - rank within team
-# - teammate information
-```
+This is an educational/hobby project for F1 and data science enthusiasts. It's not intended for betting or official F1 predictions. The models are trained on historical data and may not reflect current driver form or team dynamics.
 
-## ⚙️ Configuration
+## 🛠️ Dependencies
 
-Edit `config/settings.yaml` to customize:
-
-```yaml
-# Data paths
-data:
-  input_dir: "../f1-ml/data_processed/raw"
-  interim_dir: "data/interim"
-  processed_dir: "data/processed"
-
-# Feature engineering
-features:
-  driver_form_windows: [3, 5]
-  team_form_windows: [3, 5]
-  h2h_windows: [4, 6]
-
-# Model parameters
-models:
-  xgboost:
-    n_estimators: 100
-    max_depth: 6
-    learning_rate: 0.1
-
-# Data splitting
-splits:
-  train_seasons: [2010, 2011, ..., 2022]
-  val_seasons: [2023]
-  test_seasons: [2024, 2025]
-```
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-python -m pytest tests/
-
-# Run specific test
-python -m pytest tests/test_labeling.py
-```
-
-## 📁 Output Files
-
-### Models
-- `models/logistic_regression.joblib`
-- `models/xgboost.joblib`
-- `models/*_results.json`
-
-### Reports
-- `reports/evaluation_summary.md`
-- `reports/head_to_head_stats.json`
-- `reports/train.log`
-
-### Visualizations
-- `reports/figures/*_evaluation.png`
-- `reports/figures/xgboost_shap_summary.png`
-- `reports/figures/head_to_head_analysis.png`
-
-### Predictions
-- `reports/predictions/predictions_<event>.csv`
-- `reports/predictions/summary_<event>.md`
-
-## 🔍 Data Schema
-
-### Input Requirements
-- Season, event, driver, constructor identifiers
-- Qualifying position and lap times
-- Practice session data (optional)
-- Track and weather information (optional)
-
-### Feature Output
-- 50+ engineered features
-- Rolling statistics with configurable windows
-- One-hot encoded categorical variables
-- Missing value flags and imputation indicators
-
-## 🚨 Assumptions & Limitations
-
-### Data Assumptions
-- Two drivers per constructor per event
-- Qualifying session determines race grid
-- Historical data available for feature engineering
-- No data leakage across temporal splits
-
-### Model Limitations
-- Binary classification (beats/doesn't beat teammate)
-- No probability calibration guarantees
-- Assumes teammate relationships remain stable
-- Limited to qualifying session predictions
-
-### Edge Cases Handled
-- Single drivers (dropped from training)
-- Equal qualifying times (official order used)
-- Missing practice data (seasonal median imputation)
-- Sprint weekends (configurable session selection)
-
-## 🛠️ Development
-
-### Adding New Features
-1. Implement in `src/features.py`
-2. Add to feature configuration
-3. Update data validation
-4. Add unit tests
-
-### Adding New Models
-1. Implement training in `src/train.py`
-2. Add evaluation in `src/eval.py`
-3. Update prediction pipeline
-4. Add model configuration
-
-### Extending to Other Predictions
-- Modify labeling logic in `src/labeling.py`
-- Update feature engineering for new targets
-- Adjust evaluation metrics
-- Extend prediction interface
-
-## 📚 Dependencies
-
-- **Core ML**: scikit-learn, xgboost, pandas, numpy
-- **Visualization**: matplotlib, seaborn, shap
-- **Data**: pyarrow, joblib
-- **Configuration**: pyyaml
+- **ML**: scikit-learn, xgboost, shap
+- **Data**: pandas, numpy, pyarrow
+- **Viz**: matplotlib, seaborn
+- **UI**: streamlit
+- **Utils**: joblib, pyyaml
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create feature branch
+2. Create a feature branch
 3. Add tests for new functionality
 4. Ensure all tests pass
-5. Submit pull request
-
-## 📄 License
-
-[Your License Here]
-
-## 🙏 Acknowledgments
-
-- FastF1 library for F1 data access
-- Scikit-learn for ML framework
-- XGBoost for gradient boosting
-- SHAP for model explainability
+5. Submit a pull request
 
 ## 📞 Support
 
-For questions or issues:
-- Create GitHub issue
-- Check documentation in `reports/`
-- Review training logs in `reports/train.log`
-- Examine configuration in `config/settings.yaml`
+- **Issues**: Create a GitHub issue
+- **Documentation**: Check `reports/` directory
+- **Configuration**: Review `config/settings.yaml`
+- **Status**: Run `python run_all.py --status`
+
+---
+
+Built with ❤️ for the F1 community. May the best teammate win!
