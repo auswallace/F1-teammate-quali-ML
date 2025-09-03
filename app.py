@@ -433,7 +433,7 @@ def main():
             st.markdown("### 🏁 Team-by-Team Predictions")
             
             # Get country code for the event
-            event_info = F1_CALENDAR.get(event_key, {})
+            event_info = F1_CALENDAR.get(selected_event, {})
             country_code = country_code_for_event(event_info)
             
             # Display each team with rich visuals
