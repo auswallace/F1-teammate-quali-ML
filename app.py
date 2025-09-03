@@ -183,18 +183,15 @@ def load_available_events():
         for _, row in df.iterrows():
             event_key = row['event_key']
             if event_key not in event_details:
-                round_key = row.get('round', '')
-                season = row['season']
-                
-                # Get proper track name and date
-                track_name = TRACK_MAPPING.get(round_key, f"Round {round_key}")
-                event_date = SEASON_DATES.get(season, {}).get(round_key, "Date TBD")
+                # Get calendar info from our F1 database
+                calendar_info = F1_CALENDAR.get(event_key, {})
                 
                 event_details[event_key] = {
-                    'season': season,
-                    'round': round_key,
-                    'track_name': track_name,
-                    'event_date': event_date,
+                    'season': row['season'],
+                    'round': row.get('round', ''),
+                    'track_name': calendar_info.get('track', f"Round {row.get('round', '')}"),
+                    'location': calendar_info.get('location', 'Location TBD'),
+                    'event_date': calendar_info.get('date', 'Date TBD'),
                     'is_sprint_weekend': row.get('is_sprint_weekend', False)
                 }
         
@@ -274,14 +271,15 @@ def main():
             track_name = details.get('track_name', 'Unknown Track')
             round_num = details.get('round', '')
             event_date = details.get('event_date', '')
+            location = details.get('location', '')
             
-            # Create a rich description with round, track, and date
+            # Create a rich description with round, track, location, and date
             if round_num and track_name != f"Round {round_num}":
                 # Extract just the track name without "Circuit" etc. for cleaner display
                 clean_track = track_name.replace(' International Circuit', '').replace(' Circuit', '').replace(' Autodrome', '')
-                return f"{round_num} - {clean_track} ({event_date})"
+                return f"{round_num} - {clean_track}, {location} ({event_date})"
             else:
-                return f"{event_key} - {track_name} ({event_date})"
+                return f"{event_key} - {track_name}, {location} ({event_date})"
         
         selected_event = st.sidebar.selectbox(
             "Event",
@@ -321,7 +319,7 @@ def main():
         # Event details
         if selected_event in event_details:
             details = event_details[selected_event]
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5 = st.columns(5)
             with col1:
                 st.metric("Season", details['season'])
             with col2:
@@ -329,6 +327,8 @@ def main():
             with col3:
                 st.metric("Track", details['track_name'] if details['track_name'] else "Unknown")
             with col4:
+                st.metric("Location", details.get('location', 'TBD'))
+            with col5:
                 st.metric("Date", details.get('event_date', 'TBD'))
             
             if details.get('is_sprint_weekend'):
