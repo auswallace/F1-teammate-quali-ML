@@ -1,0 +1,83 @@
+# F1 Teammate Qualifying Prediction Pipeline Configuration
+
+# Data paths
+data:
+  input_dir: "../f1-ml/data_processed/raw"
+  interim_dir: "data/interim"
+  processed_dir: "data/processed"
+  models_dir: "models"
+  reports_dir: "reports"
+
+# Feature engineering parameters
+features:
+  # Rolling window sizes
+  driver_form_windows: [3, 5]
+  team_form_windows: [3, 5]
+  h2h_windows: [4, 6]
+  
+  # Practice session imputation
+  practice_imputation: "seasonal_median"
+  
+  # Outlier clipping
+  outlier_clipping:
+    quali_time: [0.05, 0.95]  # 5th and 95th percentiles
+    practice_delta: [0.01, 0.99]  # 1st and 99th percentiles
+
+# Model parameters
+models:
+  logistic_regression:
+    class_weight: "balanced"
+    random_state: 42
+    
+  xgboost:
+    scale_pos_weight: null  # Will be computed from class ratio
+    random_state: 42
+    n_estimators: 100
+    max_depth: 6
+    learning_rate: 0.1
+
+# Training parameters
+training:
+  random_state: 42
+  cv_folds: 5
+  test_size: 0.2
+  
+# Data splitting
+splits:
+  train_seasons: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+  val_seasons: [2023]
+  test_seasons: [2024, 2025]
+
+# Sprint weekend handling
+sprint_weekends:
+  # Use qualifying session that sets race grid
+  grid_setting_session: "Q"  # Q for qualifying, SQ for sprint qualifying
+
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "reports/train.log"
+
+# Walk-forward validation settings
+walkforward:
+  season_blocks:
+    - train_upto: 2021
+      test_seasons: [2022]
+    - train_upto: 2022
+      test_seasons: [2023]
+    - train_upto: 2023
+      test_seasons: [2024, 2025]
+
+# Evaluation settings
+eval:
+  threshold: 0.50      # used for class label from probability
+  calibrate: true      # turn on/off calibration
+  calibration_method: isotonic  # or 'platt'
+  topk_prob: [0.6, 0.7, 0.8, 0.9]
+
+# Experiment tracking
+tracking:
+  enabled: false
+  backend: "mlflow"  # or "wandb"
+  run_name_prefix: "f1_teammate_wf"
