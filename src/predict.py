@@ -330,6 +330,98 @@ class TeammatePredictor:
         
         return all_predictions
 
+    def build_event_prediction_df(self, event_key: str, 
+                                 include_actual: bool = False) -> pd.DataFrame:
+        """Build a tidy prediction dataframe for a specific event.
+        
+        Args:
+            event_key: Event key to predict
+            include_actual: Whether to include actual results for evaluation
+            
+        Returns:
+            DataFrame with predictions and optional actual results
+        """
+        try:
+            # Load processed data for the event
+            processed_path = Path(self.config['data']['processed_dir']) / "teammate_qual.parquet"
+            if not processed_path.exists():
+                raise FileNotFoundError(f"Processed data not found: {processed_path}")
+            
+            df_processed = pd.read_parquet(processed_path)
+            event_data = df_processed[df_processed['event_key'] == event_key].copy()
+            
+            if len(event_data) == 0:
+                raise ValueError(f"No data found for event: {event_key}")
+            
+            # Prepare features
+            X, driver_info = self._prepare_prediction_features(event_data)
+            
+            # Make predictions with XGBoost (main model)
+            if 'xgboost' not in self.models:
+                raise ValueError("XGBoost model not found")
+            
+            model = self.models['xgboost']
+            y_pred_proba = model.predict_proba(X)[:, 1]
+            
+            # Apply calibration if available
+            if (self.config['eval']['calibrate'] and 
+                self.calibrator is not None and 
+                'calibrator' in self.calibrator):
+                y_pred_proba = self.calibrator['calibrator'].predict(y_pred_proba)
+            
+            # Create prediction dataframe
+            results = []
+            threshold = self.config['eval']['threshold']
+            
+            for i, (_, driver) in enumerate(driver_info.iterrows()):
+                prob = y_pred_proba[i]
+                pred_label = 1 if prob >= threshold else 0
+                
+                result = {
+                    'driver_id': driver['driver_id'],
+                    'driver_name': driver['driver_name'],
+                    'constructor_id': driver['constructor_id'],
+                    'constructor_name': driver['constructor_name'],
+                    'model_prob': prob,
+                    'model_pick': pred_label,
+                    'model_confidence': prob if pred_label == 1 else (1 - prob)
+                }
+                
+                if include_actual:
+                    # Add actual results if available
+                    actual_row = event_data[event_data['driver_id'] == driver['driver_id']]
+                    if len(actual_row) > 0:
+                        result['actual_beats_teammate'] = actual_row.iloc[0]['beats_teammate_q']
+                        result['teammate_gap_ms'] = actual_row.iloc[0]['teammate_gap_ms']
+                
+                results.append(result)
+            
+            # Add teammate information
+            df_results = pd.DataFrame(results)
+            df_results = self._add_teammate_info(df_results)
+            
+            return df_results
+            
+        except Exception as e:
+            logger.error(f"Error building prediction dataframe for {event_key}: {e}")
+            raise
+
+    def _add_teammate_info(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Add teammate information to prediction dataframe."""
+        # Group by constructor to find teammate pairs
+        for constructor_id in df['constructor_id'].unique():
+            team_drivers = df[df['constructor_id'] == constructor_id]
+            if len(team_drivers) == 2:
+                driver1, driver2 = team_drivers.iloc[0], team_drivers.iloc[1]
+                
+                # Add teammate info
+                df.loc[df['driver_id'] == driver1['driver_id'], 'teammate_id'] = driver2['driver_id']
+                df.loc[df['driver_id'] == driver1['driver_id'], 'teammate_name'] = driver2['driver_name']
+                df.loc[df['driver_id'] == driver2['driver_id'], 'teammate_id'] = driver1['driver_id']
+                df.loc[df['driver_id'] == driver2['driver_id'], 'teammate_name'] = driver1['driver_name']
+        
+        return df
+
 
 def main():
     """Main function to run prediction pipeline."""

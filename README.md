@@ -20,6 +20,12 @@ make predict EVENT=2025_11
 make status
 ```
 
+### Run the App
+```bash
+streamlit run app.py
+```
+Then select Season and Event in the browser.
+
 ## 🏗️ Architecture
 
 ```
