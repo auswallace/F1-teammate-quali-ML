@@ -436,7 +436,7 @@ def main():
             event_info = F1_CALENDAR.get(selected_event, {})
             country_code = country_code_for_event(event_info)
             
-            # Display each team with rich visuals
+            # Display each team with rich visuals using Streamlit components
             for _, row in display_df.iterrows():
                 team_name = row['🏎️ Team']
                 driver_a = row['Driver A']
@@ -464,68 +464,102 @@ def main():
                     driver_a_img = "data/assets/placeholders/driver.png"
                     driver_b_img = "data/assets/placeholders/driver.png"
                 
-                # Create team row with F1 styling
-                text_color = "#ffffff" if high_contrast else "#333333"
-                subtext_color = "#f0f0f0" if high_contrast else "#666666"
-                background_color = "#1a1a1a" if high_contrast else "#f8f9fa"
-                
+                # Create team row with F1 styling using Streamlit components
                 with st.container():
-                    st.markdown(f"""
-                    <div class="team-row">
-                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                            <img src="data:image/png;base64,{get_image_base64(flag_img)}" class="circle-flag" style="margin-right: 10px;">
-                            <h4 style="margin: 0; color: #e10600;">{event_info.get('track', 'Unknown Track')}</h4>
-                        </div>
+                    # Team header with flag and track
+                    col1, col2 = st.columns([1, 4])
+                    with col1:
+                        try:
+                            st.image(str(flag_img), width=28)
+                        except:
+                            st.markdown("🚩")
+                    with col2:
+                        st.markdown(f"**{event_info.get('track', 'Unknown Track')}**")
+                    
+                    # Team name and logo
+                    col1, col2 = st.columns([1, 4])
+                    with col1:
+                        try:
+                            st.image(str(team_img), width=40)
+                        except:
+                            st.markdown("🏁")
+                    with col2:
+                        st.markdown(f"### {team_name}")
+                    
+                    # Driver comparison
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        # Driver A
+                        border_color = "#28a745" if model_pick == driver_a else "#6c757d"
+                        background_color = "rgba(40, 167, 69, 0.1)" if model_pick == driver_a else "rgba(108, 117, 125, 0.1)"
                         
-                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                            <img src="data:image/png;base64,{get_image_base64(team_img)}" class="circle-team" style="margin-right: 15px;">
-                            <h3 style="margin: 0; color: {text_color};">{team_name}</h3>
-                        </div>
+                        st.markdown(f"""
+                        <div style="border: 2px solid {border_color}; border-radius: 8px; padding: 15px; background: {background_color}; text-align: center;">
+                        """, unsafe_allow_html=True)
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <!-- Driver A -->
-                            <div style="text-align: center; padding: 15px; border: 2px solid {'#28a745' if model_pick == driver_a else '#6c757d'}; border-radius: 8px; background: {'rgba(40, 167, 69, 0.1)' if model_pick == driver_a else 'rgba(108, 117, 125, 0.1)'};">
-                                <img src="data:image/png;base64,{get_image_base64(driver_a_img)}" class="circle-img" style="margin-bottom: 10px;">
-                                <h4 style="margin: 5px 0; color: {text_color};">{driver_a}</h4>
-                                <p style="margin: 5px 0; color: {subtext_color};">Driver A</p>
-                            </div>
-                            
-                            <!-- Driver B -->
-                            <div style="text-align: center; padding: 15px; border: 2px solid {'#28a745' if model_pick == driver_b else '#6c757d'}; border-radius: 8px; background: {'rgba(40, 167, 69, 0.1)' if model_pick == driver_b else 'rgba(108, 117, 125, 0.1)'};">
-                                <img src="data:image/png;base64,{get_image_base64(driver_b_img)}" class="circle-img" style="margin-bottom: 10px;">
-                                <h4 style="margin: 5px 0; color: {text_color};">{driver_b}</h4>
-                                <p style="margin: 5px 0; color: {subtext_color};">Driver B</p>
-                            </div>
-                        </div>
+                        try:
+                            st.image(str(driver_a_img), width=48)
+                        except:
+                            st.markdown("👤")
                         
-                        <div style="margin-top: 20px; padding: 15px; background: {background_color}; border-radius: 8px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
-                                <div style="text-align: center;">
-                                    <h5 style="margin: 5px 0; color: #e10600;">🤖 Model Pick</h5>
-                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{model_pick}</p>
-                                    <p style="margin: 5px 0; color: {subtext_color};">{confidence:.1%} confidence</p>
-                                </div>
-                                <div style="text-align: center;">
-                                    <h5 style="margin: 5px 0; color: #007bff;">🏁 Actual Winner</h5>
-                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{actual_winner}</p>
-                                </div>
-                                <div style="text-align: center;">
-                                    <h5 style="margin: 5px 0; color: #6f42c1;">📈 H2H Pick</h5>
-                                    <p style="margin: 5px 0; font-weight: bold; color: {text_color};">{h2h_pick}</p>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; justify-content: space-around; margin-top: 15px;">
-                                <span style="padding: 5px 15px; border-radius: 20px; background: {'#28a745' if model_correct else '#dc3545'}; color: white; font-weight: bold;">
-                                    {'✅ Correct' if model_correct else '❌ Incorrect'}
-                                </span>
-                                <span style="padding: 5px 15px; border-radius: 20px; background: {'#28a745' if h2h_correct else '#dc3545' if pd.notna(h2h_correct) else '#6c757d'}; color: white; font-weight: bold;">
-                                    {'✅ H2H Correct' if h2h_correct else '❌ H2H Incorrect' if pd.notna(h2h_correct) else 'No H2H Data'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        st.markdown(f"**{driver_a}**")
+                        st.markdown("*Driver A*")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    with col2:
+                        # Driver B
+                        border_color = "#28a745" if model_pick == driver_b else "#6c757d"
+                        background_color = "rgba(40, 167, 69, 0.1)" if model_pick == driver_b else "rgba(108, 117, 125, 0.1)"
+                        
+                        st.markdown(f"""
+                        <div style="border: 2px solid {border_color}; border-radius: 8px; padding: 15px; background: {background_color}; text-align: center;">
+                        """, unsafe_allow_html=True)
+                        
+                        try:
+                            st.image(str(driver_b_img), width=48)
+                        except:
+                            st.markdown("👤")
+                        
+                        st.markdown(f"**{driver_b}**")
+                        st.markdown("*Driver B*")
+                        st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    # Prediction results
+                    st.markdown("---")
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown("**🤖 Model Pick**")
+                        st.markdown(f"**{model_pick}**")
+                        st.markdown(f"*{confidence:.1%} confidence*")
+                    
+                    with col2:
+                        st.markdown("**🏁 Actual Winner**")
+                        st.markdown(f"**{actual_winner}**")
+                    
+                    with col3:
+                        st.markdown("**📈 H2H Pick**")
+                        st.markdown(f"**{h2h_pick}**")
+                    
+                    # Correctness indicators
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if model_correct:
+                            st.success("✅ Model Correct")
+                        else:
+                            st.error("❌ Model Incorrect")
+                    
+                    with col2:
+                        if pd.notna(h2h_correct):
+                            if h2h_correct:
+                                st.success("✅ H2H Correct")
+                            else:
+                                st.error("❌ H2H Incorrect")
+                        else:
+                            st.info("No H2H Data")
+                    
+                    st.markdown("---")
             
             # Add legend
             st.markdown("---")

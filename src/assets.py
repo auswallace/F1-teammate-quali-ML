@@ -66,7 +66,7 @@ def load_driver_map() -> Dict[str, str]:
             writer.writerow(['NOR', 'local:data/assets/headshots/lando_norris.png'])
             writer.writerow(['PIS', 'local:data/assets/headshots/oscar_piastri.png'])
         
-        st.info("📁 Created `data/assets/drivers.csv` - add your driver headshots there!")
+        # st.info("📁 Created `data/assets/drivers.csv` - add your driver headshots there!")
         return {}
     
     mapping = {}
@@ -94,7 +94,7 @@ def load_team_map() -> Dict[str, str]:
             writer.writerow(['MCLAREN', 'local:data/assets/logos/mclaren.png'])
             writer.writerow(['MERCEDES', 'local:data/assets/logos/mercedes.png'])
         
-        st.info("📁 Created `data/assets/teams.csv` - add your team logos there!")
+        # st.info("📁 Created `data/assets/teams.csv` - add your team logos there!")
         return {}
     
     mapping = {}
@@ -124,7 +124,7 @@ def load_flag_map() -> Dict[str, str]:
             writer.writerow(['au', 'https://flagcdn.com/w40/au.png'])
             writer.writerow(['jp', 'https://flagcdn.com/w40/jp.png'])
         
-        st.info("📁 Created `data/assets/flags.csv` - customize flag sources there!")
+        # st.info("📁 Created `data/assets/flags.csv` - customize flag sources there!")
         return {}
     
     mapping = {}
