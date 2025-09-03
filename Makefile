@@ -15,6 +15,7 @@ help:
 	@echo "  make eval        # evaluate on val/test (with baselines)"
 	@echo "  make wf          # walk-forward validation"
 	@echo "  make predict EVENT=2025_11  # predict for event"
+	@echo "  make dashboard   # launch Streamlit dashboard"
 	@echo "  make status      # show project status + next step"
 	@echo "  make clean       # remove caches and temp artifacts"
 	@echo ""
@@ -52,6 +53,13 @@ predict:
 
 status:
 	$(VENV)/bin/python run_all.py --status
+
+dashboard:
+	@echo "🚀 Launching F1 Teammate Qualifying Dashboard..."
+	@echo "🌐 The app will open in your browser at: http://localhost:8501"
+	@echo "⏹️  Press Ctrl+C to stop the app"
+	@echo "--------------------------------------------------"
+	$(VENV)/bin/python -m streamlit run app.py
 
 clean:
 	find . -name "__pycache__" -type d -exec rm -rf {} +; \
