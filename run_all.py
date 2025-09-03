@@ -262,6 +262,62 @@ def run_explanation(event_key: str, team: str = None):
         return False
 
 
+def run_upcoming_predictions(event_key: str):
+    """Run upcoming predictions pipeline for a future event."""
+    try:
+        logger.info(f"Starting upcoming predictions for event {event_key}")
+        
+        # Import and run upcoming predictions
+        from src.predict import TeammatePredictor
+        
+        # Extract season from event key (e.g., "2025_12" -> 2025)
+        try:
+            season = int(event_key.split('_')[0])
+        except (IndexError, ValueError):
+            logger.error(f"Could not extract season from event key: {event_key}")
+            return False
+        
+        predictor = TeammatePredictor()
+        results = predictor.predict_future_event(event_key, season)
+        
+        if results is not None and len(results) > 0:
+            logger.info("Upcoming predictions completed successfully!")
+            logger.info(f"Generated predictions for {len(results)} drivers")
+            
+            # Print summary
+            print(f"\n{'='*60}")
+            print(f"📅 UPCOMING EVENT PREDICTIONS: {event_key}")
+            print(f"{'='*60}")
+            print(f"Season: {season}")
+            print(f"Total Drivers: {len(results)}")
+            print(f"Teams: {len(results['constructor_id'].unique())}")
+            print(f"Predictions saved to: future_{event_key}_predictions.csv")
+            
+            # Show top predictions
+            print(f"\n🏆 TOP PREDICTIONS:")
+            print("-" * 40)
+            for constructor_id in results['constructor_id'].unique():
+                team_results = results[results['constructor_id'] == constructor_id]
+                if len(team_results) == 2:
+                    driver1, driver2 = team_results.iloc[0], team_results.iloc[1]
+                    winner = driver1 if driver1['model_pick'] == 1 else driver2
+                    loser = driver2 if driver1['model_pick'] == 1 else driver1
+                    
+                    print(f"{constructor_id.replace('_', ' ').title()}:")
+                    print(f"  🎯 {winner['driver_name']} predicted to win ({winner['model_prob']:.1%})")
+                    print(f"  📊 vs {loser['driver_name']} ({loser['model_prob']:.1%})")
+                    print()
+            
+            return True
+        else:
+            logger.error("No results generated for upcoming predictions")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Upcoming predictions pipeline failed: {e}")
+        return False
+
+
 def print_status():
     """Print project status and next steps."""
     print("Project: F1 Teammate Qualifying Predictor")
@@ -353,6 +409,7 @@ Examples:
   python run_all.py --train                   # Train models
   python run_all.py --eval                    # Evaluate models
   python run_all.py --predict --event 2025_01 # Make predictions for event
+  python run_all.py --predict-upcoming --event 2025_12  # Predict upcoming event
   python run_all.py --validate-walkforward    # Run walk-forward validation
   python run_all.py --explain --event 2025_11 --team MCLAREN  # Explain predictions
   python run_all.py --all                     # Run complete pipeline
@@ -377,6 +434,8 @@ Examples:
                        help='Generate local explanations for event predictions')
     parser.add_argument('--team', type=str,
                        help='Team/constructor ID for explanations (optional, defaults to all teams)')
+    parser.add_argument('--predict-upcoming', action='store_true',
+                       help='Make predictions for upcoming/future events using lineups')
     parser.add_argument('--status', action='store_true',
                        help='Show project status and next steps')
     
@@ -389,7 +448,10 @@ Examples:
     if args.explain and not args.event:
         parser.error("--explain requires --event")
     
-    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward, args.explain, args.status]):
+    if args.predict_upcoming and not args.event:
+        parser.error("--predict-upcoming requires --event")
+    
+    if not any([args.build, args.train, args.eval, args.predict, args.all, args.validate_walkforward, args.explain, args.predict_upcoming, args.status]):
         parser.error("Must specify at least one action")
     
     # Run pipeline
@@ -430,6 +492,12 @@ Examples:
         if not run_explanation(args.event, args.team):
             success = False
             logger.error("Explanation pipeline failed")
+    
+    if args.predict_upcoming:
+        logger.info("Running upcoming predictions pipeline...")
+        if not run_upcoming_predictions(args.event):
+            success = False
+            logger.error("Upcoming predictions pipeline failed")
     
     if args.status:
         print_status()

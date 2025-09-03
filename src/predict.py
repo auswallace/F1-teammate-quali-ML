@@ -456,6 +456,292 @@ class TeammatePredictor:
             logger.error(f"Error building feature rows for {event_key}: {e}")
             raise
 
+    def build_future_event_pairs(self, event_key: str, season: int, 
+                                lineups_path: str = "data/input/upcoming_lineups.csv",
+                                events_path: str = "data/input/upcoming_events.yaml") -> pd.DataFrame:
+        """
+        Build future event pairs for pre-event predictions.
+        
+        Args:
+            event_key: The event key to build pairs for
+            season: The season year
+            lineups_path: Path to upcoming lineups CSV
+            events_path: Path to upcoming events YAML
+            
+        Returns:
+            DataFrame with two rows per constructor (one per driver)
+        """
+        try:
+            logger.info(f"Building future event pairs for {event_key} (season {season})")
+            
+            # Load upcoming lineups
+            if not Path(lineups_path).exists():
+                raise FileNotFoundError(f"Upcoming lineups file not found: {lineups_path}")
+            
+            lineups_df = pd.read_csv(lineups_path)
+            event_lineups = lineups_df[
+                (lineups_df['season'] == season) & 
+                (lineups_df['event_key'] == event_key)
+            ].copy()
+            
+            if len(event_lineups) == 0:
+                raise ValueError(f"No lineups found for event {event_key} in season {season}")
+            
+            # Load upcoming events for track info
+            track_info = {}
+            if Path(events_path).exists():
+                with open(events_path, 'r') as f:
+                    upcoming_events = yaml.safe_load(f)
+                    for event in upcoming_events:
+                        if event['event_key'] == event_key:
+                            track_info = event
+                            break
+            
+            # Load historical data for backfilling and feature building
+            processed_path = Path(self.config['data']['processed_dir']) / "teammate_qual.parquet"
+            if not processed_path.exists():
+                raise FileNotFoundError(f"Processed data not found: {processed_path}")
+            
+            df_processed = pd.read_parquet(processed_path)
+            
+            # Build future event pairs
+            future_pairs = []
+            
+            for _, lineup in event_lineups.iterrows():
+                constructor_id = lineup['constructor_id']
+                driver_a = lineup['driver_id_a']
+                driver_b = lineup['driver_id_b']
+                
+                # Backfill missing drivers from most recent pairing
+                if pd.isna(driver_a) or driver_a == '':
+                    driver_a = self._get_most_recent_driver(constructor_id, season, df_processed, 'driver_a')
+                if pd.isna(driver_b) or driver_b == '':
+                    driver_b = self._get_most_recent_driver(constructor_id, season, df_processed, 'driver_b')
+                
+                # Get driver names from historical data
+                driver_a_name = self._get_driver_name(driver_a, df_processed)
+                driver_b_name = self._get_driver_name(driver_b, df_processed)
+                
+                # Create two rows (one per driver)
+                for driver_id, driver_name in [(driver_a, driver_a_name), (driver_b, driver_b_name)]:
+                    if driver_id and driver_name:  # Skip if still missing
+                        future_pairs.append({
+                            'season': season,
+                            'event_key': event_key,
+                            'driver_id': driver_id,
+                            'driver_name': driver_name,
+                            'constructor_id': constructor_id,
+                            'constructor_name': self._get_constructor_name(constructor_id, df_processed),
+                            'track_id': track_info.get('track_id', 'UNKNOWN'),
+                            'is_future_event': True
+                        })
+            
+            if not future_pairs:
+                raise ValueError(f"No valid driver pairs found for event {event_key}")
+            
+            logger.info(f"Built {len(future_pairs)} driver rows for {event_key}")
+            return pd.DataFrame(future_pairs)
+            
+        except Exception as e:
+            logger.error(f"Error building future event pairs for {event_key}: {e}")
+            raise
+    
+    def _get_most_recent_driver(self, constructor_id: str, season: int, 
+                                df_processed: pd.DataFrame, position: str) -> str:
+        """Get the most recent driver for a constructor from historical data."""
+        try:
+            # First try same season, then previous season
+            for search_season in [season, season - 1]:
+                season_data = df_processed[df_processed['season'] == search_season]
+                constructor_data = season_data[season_data['constructor_id'] == constructor_id]
+                
+                if len(constructor_data) >= 2:
+                    # Get unique drivers for this constructor in this season
+                    drivers = constructor_data['driver_id'].unique()
+                    if len(drivers) >= 2:
+                        # Return first or second driver based on position
+                        if position == 'driver_a':
+                            return drivers[0]
+                        else:
+                            return drivers[1] if len(drivers) > 1 else drivers[0]
+            
+            # Fallback: return None if no historical data found
+            logger.warning(f"No historical driver data found for {constructor_id} in season {season}")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Error getting most recent driver for {constructor_id}: {e}")
+            return None
+    
+    def _get_driver_name(self, driver_id: str, df_processed: pd.DataFrame) -> str:
+        """Get driver name from historical data."""
+        try:
+            driver_data = df_processed[df_processed['driver_id'] == driver_id]
+            if len(driver_data) > 0:
+                return driver_data.iloc[0]['driver_name']
+            return None
+        except Exception as e:
+            logger.warning(f"Error getting driver name for {driver_id}: {e}")
+            return None
+    
+    def _get_constructor_name(self, constructor_id: str, df_processed: pd.DataFrame) -> str:
+        """Get constructor name from historical data."""
+        try:
+            constructor_data = df_processed[df_processed['constructor_id'] == constructor_id]
+            if len(constructor_data) > 0:
+                return constructor_data.iloc[0]['constructor_name']
+            return constructor_id.replace('_', ' ').title()  # Fallback
+        except Exception as e:
+            logger.warning(f"Error getting constructor name for {constructor_id}: {e}")
+            return constructor_id.replace('_', ' ').title()  # Fallback
+
+    def predict_future_event(self, event_key: str, season: int) -> pd.DataFrame:
+        """
+        Make predictions for a future event using upcoming lineups.
+        
+        Args:
+            event_key: The event key to predict
+            season: The season year
+            
+        Returns:
+            DataFrame with predictions for each driver
+        """
+        try:
+            logger.info(f"Making pre-event predictions for {event_key} (season {season})")
+            
+            # Build future event pairs
+            future_pairs = self.build_future_event_pairs(event_key, season)
+            
+            if len(future_pairs) == 0:
+                raise ValueError(f"No future pairs built for event {event_key}")
+            
+            # Prepare features for future event (pre-event mode)
+            X, driver_info = self._prepare_future_event_features(future_pairs)
+            
+            # Make predictions with XGBoost (main model)
+            if 'xgboost' not in self.models:
+                raise ValueError("XGBoost model not found")
+            
+            model = self.models['xgboost']
+            y_pred_proba = model.predict_proba(X)[:, 1]
+            
+            # Apply calibration if available
+            if (self.config['eval']['calibrate'] and 
+                self.calibrator is not None and 
+                'calibrator' in self.calibrator):
+                y_pred_proba = self.calibrator['calibrator'].predict(y_pred_proba)
+            
+            # Create prediction dataframe
+            results = []
+            threshold = self.config['eval']['threshold']
+            
+            for i, (_, driver) in enumerate(driver_info.iterrows()):
+                prob = y_pred_proba[i]
+                pred_label = 1 if prob >= threshold else 0
+                
+                result = {
+                    'driver_id': driver['driver_id'],
+                    'driver_name': driver['driver_name'],
+                    'constructor_id': driver['constructor_id'],
+                    'constructor_name': driver['constructor_name'],
+                    'model_prob': prob,
+                    'model_pick': pred_label,
+                    'model_confidence': prob if pred_label == 1 else (1 - prob),
+                    'is_future_event': True,
+                    'event_key': event_key,
+                    'season': season
+                }
+                
+                results.append(result)
+            
+            # Add teammate information
+            df_results = pd.DataFrame(results)
+            df_results = self._add_teammate_info(df_results)
+            
+            # Save predictions
+            output_path = self.predictions_dir / f"future_{event_key}_predictions.csv"
+            df_results.to_csv(output_path, index=False)
+            logger.info(f"Saved future predictions to {output_path}")
+            
+            return df_results
+            
+        except Exception as e:
+            logger.error(f"Error predicting future event {event_key}: {e}")
+            raise
+    
+    def _prepare_future_event_features(self, future_pairs: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """
+        Prepare features for future events (pre-event mode).
+        
+        This method handles missing data that won't exist for future events:
+        - Practice deltas: Set to NaN (will be imputed)
+        - Weather: Set to missing (will be flagged)
+        - Track features: Use track_id from upcoming_events.yaml
+        """
+        try:
+            logger.info("Preparing features for future event (pre-event mode)")
+            
+            # Load processed data for feature engineering
+            processed_path = Path(self.config['data']['processed_dir']) / "teammate_qual.parquet"
+            df_processed = pd.read_parquet(processed_path)
+            
+            # Get feature columns (excluding targets and metadata)
+            exclude_cols = ['beats_teammate_q', 'teammate_gap_ms', 'season', 'event_key', 
+                          'driver_id', 'driver_name', 'constructor_id', 'constructor_name']
+            feature_columns = [col for col in df_processed.columns if col not in exclude_cols]
+            
+            # Initialize feature matrix
+            X = pd.DataFrame(index=future_pairs.index, columns=feature_columns)
+            
+            # Fill features based on historical data and upcoming event info
+            for idx, (_, driver) in enumerate(future_pairs.iterrows()):
+                driver_id = driver['driver_id']
+                constructor_id = driver['constructor_id']
+                track_id = driver['track_id']
+                
+                # Get historical features for this driver
+                driver_history = df_processed[
+                    (df_processed['driver_id'] == driver_id) & 
+                    (df_processed['constructor_id'] == constructor_id)
+                ].copy()
+                
+                if len(driver_history) > 0:
+                    # Use most recent features (last event)
+                    latest_features = driver_history.sort_values('event_key').iloc[-1]
+                    
+                    for col in feature_columns:
+                        if col in latest_features:
+                            X.loc[idx, col] = latest_features[col]
+                        else:
+                            X.loc[idx, col] = np.nan
+                else:
+                    # No history for this driver-constructor combination
+                    for col in feature_columns:
+                        X.loc[idx, col] = np.nan
+                
+                # Handle track-specific features
+                if 'track_id' in feature_columns:
+                    X.loc[idx, 'track_id'] = track_id
+                
+                # Set practice deltas to NaN (won't exist pre-event)
+                practice_cols = [col for col in feature_columns if 'fp' in col.lower() and 'delta' in col.lower()]
+                for col in practice_cols:
+                    X.loc[idx, col] = np.nan
+                
+                # Set weather features to missing
+                weather_cols = [col for col in feature_columns if any(w in col.lower() for w in ['temp', 'rain', 'wind', 'humidity'])]
+                for col in weather_cols:
+                    X.loc[idx, col] = np.nan
+            
+            # Handle missing values using existing imputation logic
+            X = self._handle_missing_features(X)
+            
+            return X, future_pairs
+            
+        except Exception as e:
+            logger.error(f"Error preparing future event features: {e}")
+            raise
+
 
 def main():
     """Main function to run prediction pipeline."""
@@ -464,22 +750,52 @@ def main():
     parser = argparse.ArgumentParser(description='Make teammate qualifying predictions')
     parser.add_argument('--event', type=str, required=True, help='Event key to predict')
     parser.add_argument('--data-paths', nargs='+', required=True, help='Paths to data files')
+    parser.add_argument('--future', action='store_true', help='Predict for future event using upcoming lineups')
+    parser.add_argument('--season', type=int, help='Season year for future predictions')
     
     args = parser.parse_args()
     
     predictor = TeammatePredictor()
     
     try:
-        results = predictor.predict_teammate(args.event, args.data_paths)
-        logger.info(f"Predictions completed for {args.event}")
-        logger.info(f"Results shape: {results.shape}")
-        
-        # Print summary
-        print(f"\nPredictions for {args.event}:")
-        print("=" * 50)
-        for _, row in results.iterrows():
-            print(f"{row['driver_name']} ({row['constructor_id']}): "
-                  f"{row['ensemble_prob']:.3f} probability of beating teammate")
+        if args.future:
+            if not args.season:
+                parser.error("--future requires --season")
+            
+            results = predictor.predict_future_event(args.event, args.season)
+            logger.info(f"Future predictions completed for {args.event}")
+            logger.info(f"Results shape: {results.shape}")
+            
+            # Print summary
+            print(f"\nFuture Predictions for {args.event} (Season {args.season}):")
+            print("=" * 60)
+            print("📅 PRE-EVENT PREDICTIONS (using upcoming lineups)")
+            print("=" * 60)
+            
+            # Group by constructor for better display
+            for constructor_id in results['constructor_id'].unique():
+                team_results = results[results['constructor_id'] == constructor_id]
+                print(f"\n🏎️  {constructor_id.replace('_', ' ').title()}:")
+                
+                for _, row in team_results.iterrows():
+                    print(f"   {row['driver_name']}: {row['model_prob']:.1%} probability of beating teammate")
+                    
+                    if row['model_pick'] == 1:
+                        print(f"   🎯 Model Pick: {row['driver_name']} (confidence: {row['model_confidence']:.1%})")
+            
+            print(f"\n💾 Predictions saved to: future_{args.event}_predictions.csv")
+            
+        else:
+            results = predictor.predict_teammate(args.event, args.data_paths)
+            logger.info(f"Predictions completed for {args.event}")
+            logger.info(f"Results shape: {results.shape}")
+            
+            # Print summary
+            print(f"\nPredictions for {args.event}:")
+            print("=" * 50)
+            for _, row in results.iterrows():
+                print(f"{row['driver_name']} ({row['constructor_id']}): "
+                      f"{row['model_prob']:.3f} probability of beating teammate")
         
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
