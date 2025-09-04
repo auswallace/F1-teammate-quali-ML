@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 repo_root = Path(__file__).parent.parent
 sys.path.insert(0, str(repo_root))
 
-from routers import status, events, predictions, trackmap
+from routers import status, events, predictions, trackmap, race_predictions
 
 # Create FastAPI app
 app = FastAPI(
@@ -48,6 +48,7 @@ app.include_router(status.router, prefix="/api", tags=["status"])
 app.include_router(events.router, prefix="/api", tags=["events"])
 app.include_router(predictions.router, prefix="/api", tags=["predictions"])
 app.include_router(trackmap.router, prefix="/api", tags=["trackmap"])
+app.include_router(race_predictions.router, prefix="/api", tags=["race_predictions"])
 
 @app.get("/")
 async def root():
@@ -60,7 +61,8 @@ async def root():
             "status": "/api/status",
             "events": "/api/events",
             "predictions": "/api/predictions/{season}/{event_key}",
-            "trackmap": "/api/trackmap/{season}/{event_key}"
+            "trackmap": "/api/trackmap/{season}/{event_key}",
+            "race_predictions": "/api/predict/race_winner/{season}/{event_key}"
         }
     }
 

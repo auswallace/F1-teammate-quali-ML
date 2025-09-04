@@ -25,6 +25,36 @@ GBR_SILVERSTONE:
   country_code: "gb"
   events: ["2025_12", "2024_12", "2023_12"]
 
+EXAMPLE:
+  svg: EXAMPLE.svg
+  name: "Example Circuit"
+  country_code: "xx"
+  events: ["2025_99"]
+
+AUS:
+  svg: AUS.svg
+  name: "Albert Park Circuit"
+  country_code: "au"
+  events: ["2025_03", "2024_03", "2023_01"]
+
+MON:
+  svg: MON.svg
+  name: "Circuit de Monaco"
+  country_code: "mc"
+  events: ["2025_08", "2024_08", "2023_08"]
+
+BHR:
+  svg: BHR.svg
+  name: "Bahrain International Circuit"
+  country_code: "bh"
+  events: ["2025_01", "2024_01", "2023_01"]
+
+GBR_SILVERSTONE:
+  svg: GBR_SILVERSTONE.svg
+  name: "Silverstone Circuit"
+  country_code: "gb"
+  events: ["2025_12", "2024_12", "2023_12"]
+
 # Add more circuits as needed
 # Format:
 # CIRCUIT_ID:

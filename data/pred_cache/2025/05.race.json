@@ -1,0 +1,204 @@
+{
+  "candidates": [
+    {
+      "driver": "PIA",
+      "team": "McLaren",
+      "grid_position": 2,
+      "final_position": 1,
+      "actual_winner": true,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "LEC",
+      "team": "Ferrari",
+      "grid_position": 4,
+      "final_position": 3,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "RUS",
+      "team": "Mercedes",
+      "grid_position": 3,
+      "final_position": 5,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "ANT",
+      "team": "Mercedes",
+      "grid_position": 5,
+      "final_position": 6,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "HAM",
+      "team": "Ferrari",
+      "grid_position": 7,
+      "final_position": 7,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "SAI",
+      "team": "Williams",
+      "grid_position": 6,
+      "final_position": 8,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "VER",
+      "team": "Red Bull Racing",
+      "grid_position": 1,
+      "final_position": 2,
+      "actual_winner": false,
+      "prob": 0.14285502043759177,
+      "conf_low": 0.09285502043759176,
+      "conf_high": 0.19285502043759178
+    },
+    {
+      "driver": "OCO",
+      "team": "Haas F1 Team",
+      "grid_position": 19,
+      "final_position": 14,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "TSU",
+      "team": "Red Bull Racing",
+      "grid_position": 8,
+      "final_position": 19,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "BOR",
+      "team": "Kick Sauber",
+      "grid_position": 20,
+      "final_position": 18,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "DOO",
+      "team": "Alpine",
+      "grid_position": 17,
+      "final_position": 17,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "STR",
+      "team": "Aston Martin",
+      "grid_position": 16,
+      "final_position": 16,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "HUL",
+      "team": "Kick Sauber",
+      "grid_position": 18,
+      "final_position": 15,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "ALO",
+      "team": "Aston Martin",
+      "grid_position": 13,
+      "final_position": 11,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "BEA",
+      "team": "Haas F1 Team",
+      "grid_position": 15,
+      "final_position": 13,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "LAW",
+      "team": "Racing Bulls",
+      "grid_position": 12,
+      "final_position": 12,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "HAD",
+      "team": "Racing Bulls",
+      "grid_position": 14,
+      "final_position": 10,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "ALB",
+      "team": "Williams",
+      "grid_position": 11,
+      "final_position": 9,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "NOR",
+      "team": "McLaren",
+      "grid_position": 10,
+      "final_position": 4,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    },
+    {
+      "driver": "GAS",
+      "team": "Alpine",
+      "grid_position": 9,
+      "final_position": 20,
+      "actual_winner": false,
+      "prob": 1.1428412967628565e-06,
+      "conf_low": 0.0,
+      "conf_high": 0.05000114284129677
+    }
+  ]
+}

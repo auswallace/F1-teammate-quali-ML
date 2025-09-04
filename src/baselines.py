@@ -148,3 +148,4 @@ def create_display_table(results_df: pd.DataFrame) -> pd.DataFrame:
         display_rows.append(row)
     
     return pd.DataFrame(display_rows)
+

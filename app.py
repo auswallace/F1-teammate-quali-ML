@@ -6,14 +6,9 @@ Predicts which driver will beat their teammate in qualifying using ML models.
 
 import streamlit as st
 import pandas as pd
-import numpy as np
 from pathlib import Path
 import sys
-import yaml
 from datetime import datetime
-import base64
-from PIL import Image
-import io
 
 # Add src to path for imports
 sys.path.append(str(Path(__file__).parent / "src"))
@@ -93,46 +88,62 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def load_available_events_from_data():
-    """Load available events directly from the labeled data."""
+    """Load available events from event codes configuration."""
     try:
-        labeled_path = Path("data/interim/qual_labeled.parquet")
-        if not labeled_path.exists():
-            return {}, {}
+        # Try to load from event codes configuration first
+        event_codes = load_event_codes()
         
-        df = pd.read_parquet(labeled_path)
+        if not event_codes or 'seasons' not in event_codes:
+            return {}, {}
         
         # Build season -> events mapping
         season_events = {}
-        for season in sorted(df['season'].unique(), reverse=True):
-            season_data = df[df['season'] == season]
-            events = sorted(season_data['event_key'].unique())
-            season_events[season] = events
-        
-        # Build event details mapping
         event_details = {}
-        for _, row in df.iterrows():
-            event_key = row['event_key']
-            if event_key not in event_details:
+        
+        for season_data in event_codes['seasons']:
+            season = season_data['season']
+            events = []
+            
+            for event in season_data['events']:
+                round_num = event['round']
+                event_key = f"{season}_R{round_num:02d}"
+                events.append(event_key)
+                
+                # Build event details
                 event_details[event_key] = {
-                    'season': row['season'],
-                    'round': event_key.split('_R')[1] if '_R' in event_key else '',
-                    'track_name': f"Round {event_key.split('_R')[1] if '_R' in event_key else 'Unknown'}",
-                    'location': 'Location TBD',
-                    'event_date': 'Date TBD',
-                    'circuit_code': '',
-                    'is_sprint_weekend': False
+                    'season': season,
+                    'round': round_num,
+                    'track_name': event['name'].replace(' Grand Prix', ' GP'),
+                    'location': event['location'],
+                    'event_date': event['date'],
+                    'circuit_code': event['code'],
+                    'is_sprint_weekend': event.get('format') == 'sprint'
                 }
+            
+            season_events[season] = sorted(events)
         
         return season_events, event_details
         
     except Exception as e:
-        st.error(f"Error loading events from data: {e}")
+        st.error(f"Error loading events from configuration: {e}")
         return {}, {}
 
 def format_event_name(event_key):
     """Format event key to readable name."""
     if '_R' in event_key:
         season, round_num = event_key.split('_R')
+        # Get event details to show track name
+        try:
+            event_codes = load_event_codes()
+            for season_data in event_codes.get('seasons', []):
+                if season_data['season'] == int(season):
+                    for event in season_data['events']:
+                        if event['round'] == int(round_num):
+                            track_name = event['name'].replace(' Grand Prix', ' GP')
+                            return f"{season} {track_name}"
+        except:
+            pass
+        # Fallback to round format
         return f"{season} Round {round_num}"
     return event_key
 
@@ -166,7 +177,8 @@ def main():
     with col2:
         if season in season_events:
             events = season_events[season]
-            selected_event = st.selectbox("Event", options=events, index=len(events)-1, format_func=format_event_name)
+            # Default to first available event instead of last
+            selected_event = st.selectbox("Event", options=events, index=0, format_func=format_event_name)
         else:
             selected_event = None
             st.warning("No events found for selected season")
@@ -185,13 +197,25 @@ def main():
     st.header(f"🏁 Predictions for {selected_event}")
     
     # Event details
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Season", details.get('season', 'Unknown'))
     with col2:
         st.metric("Round", details.get('round', 'Unknown'))
     with col3:
         st.metric("Track", details.get('track_name', 'Unknown Track'))
+    with col4:
+        # Format date as MM DD
+        event_date = details.get('event_date', '')
+        if event_date:
+            try:
+                date_obj = datetime.strptime(event_date, '%Y-%m-%d %H:%M:%S')
+                formatted_date = date_obj.strftime('%b %d').upper()
+                st.metric("Date", formatted_date)
+            except:
+                st.metric("Date", "TBD")
+        else:
+            st.metric("Date", "TBD")
     
     # System status
     st.sidebar.subheader("📊 System Status")
@@ -209,35 +233,53 @@ def main():
             predictor = TeammatePredictor()
             predictions_df = predictor.build_event_prediction_df(selected_event, include_actual=True)
             
-            # Load actual results for evaluation
-            labeled_path = Path("data/interim/qual_labeled.parquet")
-            actual_df = pd.read_parquet(labeled_path)
-            event_actual = actual_df[actual_df['event_key'] == selected_event]
-            
-            # Merge predictions with actual results
-            results_df = predictions_df.merge(
-                event_actual[['driver_id', 'beats_teammate_q', 'teammate_gap_ms']], 
-                on='driver_id', 
-                how='left'
-            )
-            
-            # Add model correctness column
-            results_df['model_correct'] = (results_df['model_pick'] == results_df['actual_beats_teammate'])
+            # Try to load actual results for evaluation
+            results_df = predictions_df.copy()
+            try:
+                labeled_path = Path("data/interim/qual_labeled.parquet")
+                if labeled_path.exists():
+                    actual_df = pd.read_parquet(labeled_path)
+                    event_actual = actual_df[actual_df['event_key'] == selected_event]
+                    
+                    # Merge predictions with actual results
+                    results_df = predictions_df.merge(
+                        event_actual[['driver_id', 'beats_teammate_q', 'teammate_gap_ms']], 
+                        on='driver_id', 
+                        how='left'
+                    )
+                    
+                    # Add model correctness column
+                    results_df['model_correct'] = (results_df['model_pick'] == results_df['actual_beats_teammate'])
+                else:
+                    st.info("📝 **Note:** Actual results not available for evaluation. Showing predictions only.")
+                    results_df['model_correct'] = None
+            except Exception as e:
+                st.warning(f"⚠️ Could not load actual results: {e}")
+                results_df['model_correct'] = None
             
             # Compute Baseline A: Prior head-to-head leader
             results_df = compute_baseline_a(results_df, selected_event, details['season'])
             
-            # Calculate accuracy metrics
-            metrics = calculate_accuracy_metrics(results_df)
+            # Calculate accuracy metrics (only if we have actual results)
+            if results_df['model_correct'].notna().any():
+                metrics = calculate_accuracy_metrics(results_df)
+            else:
+                metrics = {'model_accuracy': 0.0, 'baseline_a_accuracy': 0.0}
             
             # Display summary metrics
             st.subheader("📊 Event Performance Summary")
             
             col1, col2 = st.columns(2)
             with col1:
-                st.metric("🤖 ML Model Accuracy", f"{metrics['model_accuracy']:.1%}")
+                if metrics['model_accuracy'] > 0:
+                    st.metric("🤖 ML Model Accuracy", f"{metrics['model_accuracy']:.1%}")
+                else:
+                    st.metric("🤖 ML Model Accuracy", "N/A (No actual results)")
             with col2:
-                st.metric("📈 H2H Record Accuracy", f"{metrics['baseline_a_accuracy']:.1%}")
+                if metrics['baseline_a_accuracy'] > 0:
+                    st.metric("📈 H2H Record Accuracy", f"{metrics['baseline_a_accuracy']:.1%}")
+                else:
+                    st.metric("📈 H2H Record Accuracy", "N/A (No actual results)")
             
             # Display track map (simplified for now)
             st.subheader("🗺️ Circuit Map")
@@ -256,24 +298,31 @@ def main():
             with summary_cols[0]:
                 st.metric("Teams", len(display_df))
             with summary_cols[1]:
-                correct_predictions = display_df['✅ Model Correct'].sum()
-                st.metric("Model Correct", f"{correct_predictions}/{len(display_df)}")
+                if '✅ Model Correct' in display_df.columns:
+                    correct_predictions = display_df['✅ Model Correct'].sum()
+                    st.metric("Model Correct", f"{correct_predictions}/{len(display_df)}")
+                else:
+                    st.metric("Model Correct", "N/A")
             with summary_cols[2]:
                 # Extract numeric confidence values
                 confidence_values = []
-                for conf_str in display_df['🎯 Model Confidence']:
-                    try:
-                        conf_val = float(conf_str.replace('%', '')) / 100
-                        confidence_values.append(conf_val)
-                    except:
-                        continue
+                if '🎯 Model Confidence' in display_df.columns:
+                    for conf_str in display_df['🎯 Model Confidence']:
+                        try:
+                            conf_val = float(conf_str.replace('%', '')) / 100
+                            confidence_values.append(conf_val)
+                        except:
+                            continue
                 
                 avg_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0
                 st.metric("Avg Confidence", f"{avg_confidence:.1%}")
             with summary_cols[3]:
-                h2h_correct = display_df['✅ H2H Correct'].dropna().sum()
-                h2h_total = display_df['✅ H2H Correct'].notna().sum()
-                st.metric("H2H Correct", f"{h2h_correct}/{h2h_total}" if h2h_total > 0 else "N/A")
+                if '✅ H2H Correct' in display_df.columns:
+                    h2h_correct = display_df['✅ H2H Correct'].dropna().sum()
+                    h2h_total = display_df['✅ H2H Correct'].notna().sum()
+                    st.metric("H2H Correct", f"{h2h_correct}/{h2h_total}" if h2h_total > 0 else "N/A")
+                else:
+                    st.metric("H2H Correct", "N/A")
             
             # Display the table
             st.dataframe(display_df, use_container_width=True, hide_index=True)
@@ -313,8 +362,12 @@ def main():
             
         except Exception as e:
             st.error(f"Error loading predictions: {e}")
-            st.info("Please ensure the pipeline is properly set up and run:")
-            st.code("make build && make train")
+            st.info("""
+            **Troubleshooting:**
+            1. Make sure the pipeline is properly set up and run: `make build && make train`
+            2. Check if the processed data exists: `data/processed/teammate_qual.parquet`
+            3. Verify the event key format matches the data
+            """)
     
     with tab2:
         st.subheader("🏆 Race Winner Predictions")
@@ -325,117 +378,218 @@ def main():
         recent form, and track history.
         """)
         
-        # Check if race winner model exists
-        race_model_path = Path("models/simple_race_winner.joblib")
-        if not race_model_path.exists():
-            st.warning("🏆 **Race Winner Model Not Found**")
-            st.info("""
-            To enable race winner predictions, you need to:
-            1. Collect race data: `python src/race_data.py --season 2024 --events "Bahrain Grand Prix" "Australian Grand Prix"`
-            2. Train the model: `python simple_race_winner.py train --data data/interim/race_data.parquet`
-            """)
-            st.code("""
-# Example commands:
-python src/race_data.py --season 2024 --events "Bahrain Grand Prix" "Australian Grand Prix" --output data/interim/race_data.parquet
-python simple_race_winner.py train --data data/interim/race_data.parquet --model models/simple_race_winner.joblib
-            """)
-        else:
+        # Cache fallback helper
+        def load_cache(season, event_code):
+            """Load cached predictions from JSON file."""
+            import json
+            import pathlib
+            p = pathlib.Path("data/pred_cache") / str(season) / f"{event_code}.race.json"
+            return json.loads(p.read_text()) if p.exists() else None
+        
+        try:
+            # Try FastAPI endpoint first
+            import requests
+            import os
+            
+            api_base = os.getenv("F1_API_BASE", "http://localhost:8000")
+            season = details['season']
+            event_code = selected_event.split('_R')[1] if '_R' in selected_event else selected_event
+            
+            # Try API endpoint
             try:
-                # Load race data
-                race_data_path = Path("data/interim/race_data.parquet")
-                if not race_data_path.exists():
-                    st.warning("🏆 **Race Data Not Found**")
-                    st.info("Please collect race data first using the commands above.")
-                else:
-                    # Load race data and model
-                    import joblib
+                response = requests.get(f"{api_base}/api/predict/race_winner/{season}/{event_code}", timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
                     
-                    race_df = pd.read_parquet(race_data_path)
-                    race_model = joblib.load(race_model_path)
-                    
-                    # Filter for current event
-                    event_race_data = race_df[(race_df['season'] == details['season']) & 
-                                            (race_df['event_key'] == selected_event)]
-                    
-                    if event_race_data.empty:
-                        st.info(f"🏆 No race data available for {selected_event}")
-                    else:
-                        # Make predictions using our simple model
-                        feature_columns = ['grid_position', 'best_qual_pos', 'final_position']
-                        X = event_race_data[feature_columns].fillna(event_race_data[feature_columns].median()).values
+                    if candidates:
+                        st.success(f"🏆 Race Winner Predictions for {selected_event}")
                         
-                        if len(X) > 0:
-                            probabilities = race_model.predict_proba(X)[:, 1]
+                        # Create dataframe for display
+                        df = pd.DataFrame(candidates)
+                        df.insert(0, "Rank", range(1, len(df) + 1))
+                        df["Probability"] = (df["prob"] * 100).round(1).astype(str) + "%"
+                        df["Confidence"] = (
+                            (df["conf_low"] * 100).round(0).astype(int).astype(str)
+                            + "% - "
+                            + (df["conf_high"] * 100).round(0).astype(int).astype(str)
+                            + "%"
+                        )
+                        
+                        # Display top 5 with medals
+                        st.subheader("🥇 Top 5 Race Winners")
+                        for i, (_, row) in enumerate(df.head(5).iterrows()):
+                            col1, col2, col3, col4 = st.columns([1, 2, 2, 1])
                             
-                            # Create results dataframe
-                            race_predictions = event_race_data[['driver_code', 'team', 'grid_position', 'best_qual_pos', 'final_position']].copy()
-                            race_predictions['probability'] = probabilities
+                            with col1:
+                                if i == 0:
+                                    st.markdown("🥇")
+                                elif i == 1:
+                                    st.markdown("🥈")
+                                elif i == 2:
+                                    st.markdown("🥉")
+                                else:
+                                    st.markdown(f"**{i+1}**")
                             
-                            # Sort by probability (highest first)
-                            race_predictions = race_predictions.sort_values('probability', ascending=False)
+                            with col2:
+                                st.markdown(f"**{row['driver']}**")
+                                st.markdown(f"*{row['team']}*")
                             
-                            # Normalize probabilities to sum to 1
-                            total_prob = race_predictions['probability'].sum()
-                            if total_prob > 0:
-                                race_predictions['probability'] = race_predictions['probability'] / total_prob
+                            with col3:
+                                st.markdown(f"**{row['Probability']}**")
+                                st.markdown(f"*Confidence: {row['Confidence']}*")
                             
-                            st.success(f"🏆 Race Winner Predictions for {selected_event}")
+                            with col4:
+                                st.markdown(f"Rank: **{row['Rank']}**")
                             
-                            # Display top 5 predictions
-                            st.subheader("🥇 Top 5 Race Winners")
-                            
-                            for i, (_, row) in enumerate(race_predictions.head(5).iterrows()):
-                                col1, col2, col3, col4 = st.columns([1, 2, 2, 1])
-                                
-                                with col1:
-                                    if i == 0:
-                                        st.markdown("🥇")
-                                    elif i == 1:
-                                        st.markdown("🥈")
-                                    elif i == 2:
-                                        st.markdown("🥉")
-                                    else:
-                                        st.markdown(f"**{i+1}**")
-                                
-                                with col2:
-                                    st.markdown(f"**{row['driver_code']}**")
-                                    st.markdown(f"*{row['team']}*")
-                                
-                                with col3:
-                                    st.markdown(f"**{row['probability']:.1%}**")
-                                    st.markdown(f"*Grid: {int(row['grid_position']) if pd.notna(row['grid_position']) else 'N/A'}*")
-                                
-                                with col4:
-                                    if pd.notna(row['best_qual_pos']):
-                                        st.markdown(f"Quali: **{int(row['best_qual_pos'])}**")
-                                    else:
-                                        st.markdown("Quali: **N/A**")
-                                
-                                if i < 4:  # Don't add separator after last row
-                                    st.markdown("---")
-                            
-                            # Show full table
-                            st.subheader("📊 Complete Race Predictions")
-                            st.dataframe(
-                                race_predictions[['driver_code', 'team', 'probability', 'grid_position', 'best_qual_pos']],
-                                use_container_width=True,
-                                hide_index=True
+                            if i < 4:  # Don't add separator after last row
+                                st.markdown("---")
+                        
+                        # Show complete table
+                        st.subheader("📊 Complete Race Predictions")
+                        
+                        # Prepare columns for display
+                        display_columns = ["Rank", "driver", "team", "Probability", "Confidence"]
+                        
+                        # Add actual results if available
+                        if 'actual_winner' in df.columns and 'final_position' in df.columns:
+                            display_columns.extend(["🏆 Actual", "✅ Winner"])
+                            df["🏆 Actual"] = df.apply(
+                                lambda row: f"P{row['final_position']}" if pd.notna(row['final_position']) else "DNF", 
+                                axis=1
                             )
-                            
-                            # Download race predictions
-                            csv = race_predictions.to_csv(index=False)
-                            st.download_button(
-                                label="📥 Download Race Predictions as CSV",
-                                data=csv,
-                                file_name=f"race_predictions_{selected_event}.csv",
-                                mime="text/csv"
-                            )
-                        else:
-                            st.warning("No race predictions generated for this event.")
-                            
-            except Exception as e:
-                st.error(f"Error loading race winner predictions: {e}")
-                st.info("Please ensure the race winner model and data are properly set up.")
+                            df["✅ Winner"] = df["actual_winner"].map({True: "🏆", False: "❌"})
+                        
+                        # Add grid position if available
+                        if 'grid_position' in df.columns:
+                            display_columns.insert(3, "grid_position")
+                        
+                        st.dataframe(
+                            df[display_columns],
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                        
+                        # Download option
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download Race Predictions as CSV",
+                            data=csv,
+                            file_name=f"race_predictions_{season}_{event_code}.csv",
+                            mime="text/csv"
+                        )
+                        return
+                        
+            except requests.exceptions.RequestException as e:
+                st.info("🌐 **API endpoint unavailable, trying cache...**")
+            
+            # Fallback to cache
+            cache_data = load_cache(season, event_code)
+            if cache_data:
+                st.success(f"🏆 Race Winner Predictions for {selected_event} (from cache)")
+                
+                # Create dataframe for display
+                df = pd.DataFrame(cache_data.get("candidates", []))
+                if not df.empty:
+                    df.insert(0, "Rank", range(1, len(df) + 1))
+                    df["Probability"] = (df["prob"] * 100).round(1).astype(str) + "%"
+                    df["Confidence"] = (
+                        (df["conf_low"] * 100).round(0).astype(int).astype(str)
+                        + "% - "
+                        + (df["conf_high"] * 100).round(0).astype(int).astype(str)
+                        + "%"
+                    )
+                    
+                    # Display top 5 with medals
+                    st.subheader("🥇 Top 5 Race Winners")
+                    for i, (_, row) in enumerate(df.head(5).iterrows()):
+                        col1, col2, col3, col4, col5 = st.columns([1, 2, 2, 1, 1])
+                        
+                        with col1:
+                            if i == 0:
+                                st.markdown("🥇")
+                            elif i == 1:
+                                st.markdown("🥈")
+                            elif i == 2:
+                                st.markdown("🥉")
+                            else:
+                                st.markdown(f"**{i+1}**")
+                        
+                        with col2:
+                            st.markdown(f"**{row['driver']}**")
+                            st.markdown(f"*{row['team']}*")
+                        
+                        with col3:
+                            st.markdown(f"**{row['Probability']}**")
+                            st.markdown(f"*Confidence: {row['Confidence']}*")
+                        
+                        with col4:
+                            if 'grid_position' in row and pd.notna(row['grid_position']):
+                                st.markdown(f"Grid: **P{int(row['grid_position'])}**")
+                            else:
+                                st.markdown("Grid: **N/A**")
+                        
+                        with col5:
+                            if 'actual_winner' in row and pd.notna(row['actual_winner']):
+                                if row['actual_winner']:
+                                    st.markdown("🏆 **Winner!**")
+                                else:
+                                    st.markdown("❌")
+                            else:
+                                st.markdown("**Prediction**")
+                        
+                        if i < 4:  # Don't add separator after last row
+                            st.markdown("---")
+                    
+                    # Show complete table
+                    st.subheader("📊 Complete Race Predictions")
+                    
+                    # Prepare columns for display
+                    display_columns = ["Rank", "driver", "team", "Probability", "Confidence"]
+                    
+                    # Add actual results if available
+                    if 'actual_winner' in df.columns and 'final_position' in df.columns:
+                        display_columns.extend(["🏆 Actual", "✅ Winner"])
+                        df["🏆 Actual"] = df.apply(
+                            lambda row: f"P{row['final_position']}" if pd.notna(row['final_position']) else "DNF", 
+                            axis=1
+                        )
+                        df["✅ Winner"] = df["actual_winner"].map({True: "🏆", False: "❌"})
+                    
+                    # Add grid position if available
+                    if 'grid_position' in df.columns:
+                        display_columns.insert(3, "grid_position")
+                    
+                    st.dataframe(
+                        df[display_columns],
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                    
+                    # Download option
+                    csv = df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Race Predictions as CSV",
+                        data=csv,
+                        file_name=f"race_predictions_{season}_{event_code}.csv",
+                        mime="text/csv"
+                    )
+                    return
+            
+            # Neither API nor cache available
+            st.error("🏆 Race Winner Predictions Not Available")
+            st.info("""
+            **To enable race winner predictions, you need to:**
+            1. Start the FastAPI backend: `uvicorn webapi.main:app --reload`
+            2. Ensure the model exists: `webapi/ml/models/race_winner.joblib`
+            3. Or precompute cache: `python tools/precompute_predictions.py --seasons 2024 2025`
+            
+            **For now, use the Qualifying H2H tab above!** 🏁
+            """)
+                        
+        except Exception as e:
+            st.error(f"Error loading race winner predictions: {e}")
+            st.info("Please ensure the race winner model and data are properly set up.")
     
     # Footer
     st.markdown("---")
