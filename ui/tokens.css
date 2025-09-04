@@ -1,0 +1,162 @@
+/*
+F1 Teammate Qualifying - Shared Design Tokens
+Dark theme with F1-style colors and styling.
+*/
+
+:root {
+  --bg: #0b0e14;            /* deep navy */
+  --panel: #121722;         /* card bg */
+  --border: #1e2533;        /* hairline */
+  --text: #e6e9f2;          /* high-contrast */
+  --muted: #a0a7b8;
+  --accent: #00d1ff;        /* cyan */
+  --accent-2: #ff7a1a;      /* papaya */
+  --good: #22c55e;
+  --bad: #ef4444;
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+}
+
+/* Base styles */
+body { 
+  background: var(--bg); 
+  color: var(--text); 
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif; 
+}
+
+/* F1 Card Components */
+.f1-card { 
+  background: var(--panel); 
+  border: 1px solid var(--border); 
+  border-radius: var(--radius-2xl); 
+  box-shadow: var(--shadow); 
+}
+
+.f1-row { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  padding: 10px 12px; 
+  border-bottom: 1px solid var(--border); 
+}
+
+.f1-row:last-child { 
+  border-bottom: 0; 
+}
+
+.f1-row.ok { 
+  background: rgba(34,197,94,0.07); 
+}
+
+.f1-row.bad { 
+  background: rgba(239,68,68,0.07); 
+}
+
+/* Circular Image Classes */
+.circle-48, .circle-40, .circle-28 { 
+  border-radius: 9999px; 
+  object-fit: cover; 
+}
+
+.circle-48 { 
+  width: 48px; 
+  height: 48px; 
+  border: 1px solid var(--border); 
+}
+
+.circle-40 { 
+  width: 40px; 
+  height: 40px; 
+  border: 1px solid var(--border); 
+  background: #0f1320; 
+}
+
+.circle-28 { 
+  width: 28px; 
+  height: 28px; 
+  border: 1px solid var(--border); 
+}
+
+/* Pill Components */
+.pill { 
+  padding: 4px 10px; 
+  border-radius: 999px; 
+  font-size: 12px; 
+  border: 1px solid var(--border); 
+  background: #0f1320; 
+  color: var(--muted); 
+}
+
+.pill-accent { 
+  background: rgba(0,209,255,0.1); 
+  color: #8ae9ff; 
+  border-color: rgba(0,209,255,0.25); 
+}
+
+.pill-alt { 
+  background: rgba(255,122,26,0.1); 
+  color: #ffb17c; 
+  border-color: rgba(255,122,26,0.25); 
+}
+
+/* Neon Track Map Styles */
+.neon { 
+  stroke-linecap: round; 
+  fill: none; 
+}
+
+.glow { 
+  filter: drop-shadow(0 0 6px currentColor) drop-shadow(0 0 12px currentColor); 
+}
+
+/* Track Map Legend */
+.track-legend {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--panel);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .f1-row {
+    padding: 8px;
+    gap: 8px;
+  }
+  
+  .circle-48 {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .circle-40 {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .circle-28 {
+    width: 24px;
+    height: 24px;
+  }
+}

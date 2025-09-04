@@ -1,0 +1,14 @@
+<!-- 
+Example circuit outline SVG
+This is a placeholder - replace with actual circuit data
+Source: Example
+License: CC-BY-SA 4.0
+Attribution: Example Circuit
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <!-- Example track outline - replace with actual circuit path -->
+  <path d="M 200 200 L 300 150 L 400 200 L 500 300 L 600 400 L 700 500 L 800 600 L 750 700 L 600 750 L 400 700 L 300 600 L 200 500 L 150 400 L 200 200 Z" 
+        fill="none" 
+        stroke="#333" 
+        stroke-width="2"/>
+</svg>
